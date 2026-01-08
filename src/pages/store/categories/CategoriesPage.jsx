@@ -1,0 +1,418 @@
+import React, { useState, useEffect } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Search, Plus, RefreshCw, Edit, Trash2, Tag, Package } from 'lucide-react'
+import { categoryAPI, userAPI, storeAPI, productAPI } from '@/services/api'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+
+const CategoriesPage = () => {
+  const [categories, setCategories] = useState([])
+  const [filteredCategories, setFilteredCategories] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [storeId, setStoreId] = useState(null)
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState(null)
+  const [newCategory, setNewCategory] = useState({
+    name: '',
+    description: '',
+  })
+  const [editCategory, setEditCategory] = useState({
+    name: '',
+    description: '',
+  })
+  const [creating, setCreating] = useState(false)
+  const [updating, setUpdating] = useState(false)
+  const [productCounts, setProductCounts] = useState({}) // categoryId -> count
+
+  useEffect(() => {
+    fetchStoreId()
+  }, [])
+
+  useEffect(() => {
+    if (storeId) {
+      fetchCategories()
+      fetchProductCounts()
+    }
+  }, [storeId])
+
+  useEffect(() => {
+    filterCategories()
+  }, [searchQuery, categories])
+
+  const fetchStoreId = async () => {
+    try {
+      const profile = await userAPI.getProfile()
+      if (profile?.storeId) {
+        setStoreId(profile.storeId)
+      } else {
+        const stores = await storeAPI.getByAdmin()
+        if (stores && stores.length > 0) {
+          setStoreId(stores[0].id)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching store ID:', error)
+    }
+  }
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true)
+      const data = await categoryAPI.getByStoreId(storeId)
+      setCategories(data || [])
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+      setCategories([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchProductCounts = async () => {
+    try {
+      const products = await productAPI.getByStoreId(storeId)
+      // Count products per category
+      const counts = {}
+      products.forEach((product) => {
+        if (product.category?.id) {
+          counts[product.category.id] = (counts[product.category.id] || 0) + 1
+        }
+      })
+      setProductCounts(counts)
+    } catch (error) {
+      console.error('Error fetching product counts:', error)
+      setProductCounts({})
+    }
+  }
+
+  const filterCategories = () => {
+    if (!searchQuery.trim()) {
+      setFilteredCategories(categories)
+      return
+    }
+
+    const query = searchQuery.toLowerCase()
+    const filtered = categories.filter((category) =>
+      category.name?.toLowerCase().includes(query)
+    )
+    setFilteredCategories(filtered)
+  }
+
+  const handleSearch = (e) => {
+    e.preventDefault()
+    filterCategories()
+  }
+
+  const handleAddCategory = async () => {
+    if (!newCategory.name) {
+      alert('Category name is required')
+      return
+    }
+
+    if (!storeId) {
+      alert('Store ID not found')
+      return
+    }
+
+    try {
+      setCreating(true)
+      const categoryData = {
+        name: newCategory.name,
+        description: newCategory.description || '',
+        storeId: storeId,
+      }
+
+      await categoryAPI.create(categoryData)
+      setIsAddDialogOpen(false)
+      setNewCategory({ name: '', description: '' })
+      await fetchCategories()
+      await fetchProductCounts() // Refresh product counts
+      alert('Category created successfully!')
+    } catch (error) {
+      console.error('Error creating category:', error)
+      alert(error.message || 'Failed to create category')
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const handleEdit = (category) => {
+    setSelectedCategory(category)
+    setEditCategory({
+      name: category.name || '',
+      description: category.description || '',
+    })
+    setIsEditDialogOpen(true)
+  }
+
+  const handleUpdateCategory = async () => {
+    if (!editCategory.name) {
+      alert('Category name is required')
+      return
+    }
+
+    if (!selectedCategory?.id) {
+      alert('Category ID not found')
+      return
+    }
+
+    try {
+      setUpdating(true)
+      const categoryData = {
+        name: editCategory.name,
+        description: editCategory.description || '',
+      }
+
+      await categoryAPI.update(selectedCategory.id, categoryData)
+      setIsEditDialogOpen(false)
+      setSelectedCategory(null)
+      await fetchCategories()
+      alert('Category updated successfully!')
+    } catch (error) {
+      console.error('Error updating category:', error)
+      alert(error.message || 'Failed to update category')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleDeleteCategory = async (id) => {
+    if (!confirm('Are you sure you want to delete this category? Products in this category will not be deleted, but they will lose their category association.')) return
+
+    try {
+      await categoryAPI.delete(id)
+      await fetchCategories()
+      await fetchProductCounts() // Refresh product counts
+      alert('Category deleted successfully!')
+    } catch (error) {
+      console.error('Error deleting category:', error)
+      alert('Failed to delete category')
+    }
+  }
+
+  return (
+    <div className="h-full overflow-auto p-4 sm:p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold">Category Management</h1>
+          <p className="text-muted-foreground mt-1">Manage your product categories</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={fetchCategories}>
+            <RefreshCw className="size-4 mr-2" />
+            Refresh
+          </Button>
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="size-4 mr-2" />
+            Add Category
+          </Button>
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <form onSubmit={handleSearch} className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search categories..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button type="submit">Search</Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Categories Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Categories ({filteredCategories.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="size-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : filteredCategories.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Tag className="size-16 text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">
+                {searchQuery ? 'No categories found matching your search' : 'No categories available. Create your first category!'}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Category Name</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Products</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCategories.map((category) => (
+                    <TableRow key={category.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Tag className="size-4 text-primary" />
+                          <span className="font-medium">{category.name || 'N/A'}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-muted-foreground text-sm">
+                          {category.description || '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Package className="size-4 text-muted-foreground" />
+                          <span>{productCounts[category.id] || 0}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleEdit(category)}
+                          >
+                            <Edit className="size-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                            onClick={() => handleDeleteCategory(category.id)}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Add Category Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Category</DialogTitle>
+            <DialogDescription>Create a new category for your products</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="name">Category Name *</Label>
+              <Input
+                id="name"
+                value={newCategory.name}
+                onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                placeholder="Enter category name"
+                className="mt-1"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleAddCategory()
+                  }
+                }}
+              />
+            </div>
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={newCategory.description}
+                onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
+                placeholder="Enter category description (optional)"
+                className="mt-1"
+                rows={3}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddCategory} disabled={creating}>
+                {creating ? 'Creating...' : 'Add Category'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Category Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Category</DialogTitle>
+            <DialogDescription>Update category information</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="edit-name">Category Name *</Label>
+              <Input
+                id="edit-name"
+                value={editCategory.name}
+                onChange={(e) => setEditCategory({ ...editCategory, name: e.target.value })}
+                placeholder="Enter category name"
+                className="mt-1"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleUpdateCategory()
+                  }
+                }}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                value={editCategory.description}
+                onChange={(e) => setEditCategory({ ...editCategory, description: e.target.value })}
+                placeholder="Enter category description (optional)"
+                className="mt-1"
+                rows={3}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateCategory} disabled={updating}>
+                {updating ? 'Updating...' : 'Update Category'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
+export default CategoriesPage
+
