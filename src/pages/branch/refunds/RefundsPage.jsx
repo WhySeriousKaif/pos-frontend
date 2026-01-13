@@ -44,12 +44,17 @@ const RefundsPage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedRefund, setSelectedRefund] = useState(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
-  const [branchId, setBranchId] = useState(1)
+  const [branchId, setBranchId] = useState(null)
 
   useEffect(() => {
     fetchBranchId()
-    fetchRefunds()
   }, [])
+
+  useEffect(() => {
+    if (branchId) {
+      fetchRefunds()
+    }
+  }, [branchId])
 
   useEffect(() => {
     filterRefunds()
@@ -60,9 +65,13 @@ const RefundsPage = () => {
       const profile = await userAPI.getProfile()
       if (profile?.branchId) {
         setBranchId(profile.branchId)
+      } else {
+        console.error('Branch ID not found in user profile')
+        alert('Branch not found. Please make sure your user is assigned to a branch.')
       }
     } catch (error) {
       console.error('Error fetching branch ID:', error)
+      alert('Failed to fetch branch information. Please refresh the page.')
     }
   }
 

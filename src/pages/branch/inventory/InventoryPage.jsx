@@ -42,7 +42,7 @@ const InventoryPage = () => {
   const [filteredInventory, setFilteredInventory] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [branchId, setBranchId] = useState(1)
+  const [branchId, setBranchId] = useState(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [products, setProducts] = useState([])
   const [newInventory, setNewInventory] = useState({
@@ -64,9 +64,10 @@ const InventoryPage = () => {
   const fetchProducts = async () => {
     try {
       const data = await productAPI.getAll()
-      setProducts(data || [])
+      setProducts(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error fetching products:', error)
+      setProducts([])
     }
   }
 
@@ -80,6 +81,8 @@ const InventoryPage = () => {
       const profile = await userAPI.getProfile()
       if (profile?.branchId) {
         setBranchId(profile.branchId)
+      } else {
+        console.error('Branch ID not found in user profile. Branch manager must be assigned to a branch.')
       }
     } catch (error) {
       console.error('Error fetching branch ID:', error)
@@ -128,24 +131,41 @@ const InventoryPage = () => {
 
   const handleAddInventory = async () => {
     try {
-      if (!newInventory.productId || !newInventory.quantity) {
-        alert('Please fill all required fields')
+      if (!branchId) {
+        alert('Branch not found. Please make sure your user is assigned to a branch and refresh the page.')
         return
       }
-      
+
+      if (!newInventory.productId) {
+        alert('Please select a product')
+        return
+      }
+
+      if (!newInventory.quantity) {
+        alert('Please enter a quantity')
+        return
+      }
+
+      const quantity = parseInt(newInventory.quantity)
+      if (Number.isNaN(quantity) || quantity <= 0) {
+        alert('Quantity must be a positive number')
+        return
+      }
+
       await inventoryAPI.create({
         branchId: branchId,
         productId: parseInt(newInventory.productId),
-        quantity: parseInt(newInventory.quantity),
+        quantity,
       })
-      
+
       setIsAddDialogOpen(false)
       setNewInventory({ productId: '', quantity: '' })
       fetchInventory()
       alert('Inventory item added successfully!')
     } catch (error) {
       console.error('Error adding inventory:', error)
-      alert(`Error adding inventory: ${error.message}`)
+      const message = error?.message || 'Failed to add inventory item'
+      alert(`Error adding inventory: ${message}`)
     }
   }
 
@@ -305,21 +325,29 @@ const InventoryPage = () => {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Product</label>
-              <Select
-                value={newInventory.productId}
-                onValueChange={(value) => setNewInventory({ ...newInventory, productId: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a product" />
-                </SelectTrigger>
-                <SelectContent>
-                  {products.map((product) => (
-                    <SelectItem key={product.id} value={product.id.toString()}>
-                      {product.name} (SKU: {product.sku})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {products.length === 0 ? (
+                <div className="mt-1 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-sm text-yellow-800">
+                    No products available. Store admin must create products first before they can be added to branch inventory.
+                  </p>
+                </div>
+              ) : (
+                <Select
+                  value={newInventory.productId}
+                  onValueChange={(value) => setNewInventory({ ...newInventory, productId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a product" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {products.map((product) => (
+                      <SelectItem key={product.id} value={product.id.toString()}>
+                        {product.name} (SKU: {product.sku})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Quantity</label>
@@ -328,7 +356,7 @@ const InventoryPage = () => {
                 placeholder="Enter quantity"
                 value={newInventory.quantity}
                 onChange={(e) => setNewInventory({ ...newInventory, quantity: e.target.value })}
-                min="0"
+                min="1"
               />
             </div>
           </div>

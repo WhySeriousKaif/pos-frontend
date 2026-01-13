@@ -104,27 +104,47 @@ const BranchesPage = () => {
   }
 
   const handleAddBranch = async () => {
-    if (!newBranch.name) {
-      alert('Branch name is required')
+    // Validate required fields
+    if (!newBranch.name || !newBranch.name.trim()) {
+      alert('Please enter a branch name')
       return
     }
 
     if (!storeId) {
-      alert('Store ID not found')
+      alert('Store ID not found. Please refresh the page.')
       return
+    }
+
+    // Validate email if provided
+    if (newBranch.email && newBranch.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(newBranch.email.trim())) {
+        alert('Please enter a valid email address')
+        return
+      }
+    }
+
+    // Validate phone if provided
+    if (newBranch.phone && newBranch.phone.trim()) {
+      const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/
+      if (!phoneRegex.test(newBranch.phone.trim())) {
+        alert('Please enter a valid phone number')
+        return
+      }
     }
 
     try {
       setCreating(true)
       const branchData = {
-        name: newBranch.name,
-        address: newBranch.address || '',
-        phone: newBranch.phone || '',
-        email: newBranch.email || '',
+        name: newBranch.name.trim(),
+        address: (newBranch.address || '').trim(),
+        phone: (newBranch.phone || '').trim(),
+        email: (newBranch.email || '').trim().toLowerCase(),
       }
 
       await branchAPI.create(branchData)
       setIsAddDialogOpen(false)
+      // Reset form
       setNewBranch({
         name: '',
         address: '',
@@ -135,7 +155,12 @@ const BranchesPage = () => {
       alert('Branch created successfully!')
     } catch (error) {
       console.error('Error creating branch:', error)
-      alert(error.message || 'Failed to create branch')
+      const errorMessage = error.message || 'Failed to create branch'
+      if (errorMessage.includes('name') || errorMessage.includes('Name')) {
+        alert(`Branch name already exists. Please use a different name.\n\nError: ${errorMessage}`)
+      } else {
+        alert(`Failed to create branch: ${errorMessage}`)
+      }
     } finally {
       setCreating(false)
     }

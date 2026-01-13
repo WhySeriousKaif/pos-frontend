@@ -67,16 +67,27 @@ const BranchLayout = ({ children }) => {
         const branch = await branchAPI.getById(userProfile.branchId)
         setBranchInfo(branch)
       } else {
-        // Fallback to default branch
-        const branch = await branchAPI.getById(1)
-        setBranchInfo(branch)
+        // No branch assigned - show placeholder
+        console.warn('Branch ID not found in user profile')
+        setBranchInfo({
+          name: 'Branch Not Assigned',
+          address: 'Please contact store admin to assign you to a branch',
+        })
       }
     } catch (error) {
       console.error('Error fetching branch info:', error)
-      setBranchInfo({
-        name: 'Branch',
-        address: 'Address not available',
-      })
+      // Only show error if it's not a 404 (branch doesn't exist)
+      if (error.message && !error.message.includes('404')) {
+        setBranchInfo({
+          name: 'Error Loading Branch',
+          address: 'Failed to load branch information',
+        })
+      } else {
+        setBranchInfo({
+          name: 'Branch Not Found',
+          address: 'Please contact store admin to assign you to a branch',
+        })
+      }
     }
   }
 

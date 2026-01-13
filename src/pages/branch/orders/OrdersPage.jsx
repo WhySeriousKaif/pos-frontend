@@ -58,19 +58,21 @@ const OrdersPage = () => {
   const [paymentFilter, setPaymentFilter] = useState('all')
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
-  const [branchId, setBranchId] = useState(1)
-
-  useEffect(() => {
-    fetchOrders()
-  }, [dateFilter, statusFilter, paymentFilter])
-
-  useEffect(() => {
-    filterOrders()
-  }, [searchQuery, orders])
+  const [branchId, setBranchId] = useState(null) // Start with null instead of hardcoded 1
 
   useEffect(() => {
     fetchBranchId()
   }, [])
+
+  useEffect(() => {
+    if (branchId) {
+      fetchOrders()
+    }
+  }, [branchId, dateFilter, statusFilter, paymentFilter])
+
+  useEffect(() => {
+    filterOrders()
+  }, [searchQuery, orders])
 
   const fetchBranchId = async () => {
     try {

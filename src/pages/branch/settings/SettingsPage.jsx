@@ -14,7 +14,7 @@ const SettingsPage = () => {
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [branchId, setBranchId] = useState(1)
+  const [branchId, setBranchId] = useState(null)
 
   useEffect(() => {
     fetchBranchInfo()
@@ -24,7 +24,12 @@ const SettingsPage = () => {
     try {
       setLoading(true)
       const profile = await userAPI.getProfile()
-      const currentBranchId = profile?.branchId || 1
+      if (!profile?.branchId) {
+        alert('Branch not found. Please make sure your user is assigned to a branch.')
+        setLoading(false)
+        return
+      }
+      const currentBranchId = profile.branchId
       setBranchId(currentBranchId)
       const branch = await branchAPI.getById(currentBranchId)
       setBranchInfo({

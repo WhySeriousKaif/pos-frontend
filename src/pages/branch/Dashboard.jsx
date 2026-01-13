@@ -45,27 +45,43 @@ const Dashboard = () => {
   const [paymentData, setPaymentData] = useState([])
   const [topProducts, setTopProducts] = useState([])
   const [loading, setLoading] = useState(true)
-  const [branchId, setBranchId] = useState(1) // Default branch ID
+  const [branchId, setBranchId] = useState(null) // Start with null
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8']
 
   useEffect(() => {
-    fetchDashboardData()
+    fetchBranchId()
   }, [])
 
+  useEffect(() => {
+    if (branchId) {
+      fetchDashboardData()
+    }
+  }, [branchId])
+
+  const fetchBranchId = async () => {
+    try {
+      const profile = await userAPI.getProfile()
+      if (profile?.branchId) {
+        setBranchId(profile.branchId)
+      } else {
+        console.error('Branch ID not found in user profile')
+        alert('Branch not found. Please make sure your user is assigned to a branch.')
+      }
+    } catch (error) {
+      console.error('Error fetching branch ID:', error)
+      alert('Failed to fetch branch information. Please refresh the page.')
+    }
+  }
+
   const fetchDashboardData = async () => {
+    if (!branchId) {
+      console.error('Cannot fetch dashboard data: branchId is not set')
+      return
+    }
+
     try {
       setLoading(true)
-      
-      // Get user profile to fetch branch ID
-      try {
-        const profile = await userAPI.getProfile()
-        if (profile?.branchId) {
-          setBranchId(profile.branchId)
-        }
-      } catch (err) {
-        console.log('Using default branch ID:', branchId)
-      }
 
       // Fetch all data in parallel
       const [allOrders, todayOrders, customers, refunds, shiftReports] = await Promise.all([

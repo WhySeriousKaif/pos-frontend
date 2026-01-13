@@ -116,33 +116,49 @@ const CategoriesPage = () => {
   }
 
   const handleAddCategory = async () => {
-    if (!newCategory.name) {
-      alert('Category name is required')
+    // Validate required fields
+    if (!newCategory.name || !newCategory.name.trim()) {
+      alert('Please enter a category name')
+      return
+    }
+
+    // Check for duplicate category names (case-insensitive)
+    const duplicateCategory = categories.find(
+      cat => cat.name.toLowerCase().trim() === newCategory.name.toLowerCase().trim()
+    )
+    if (duplicateCategory) {
+      alert(`Category "${newCategory.name.trim()}" already exists. Please use a different name.`)
       return
     }
 
     if (!storeId) {
-      alert('Store ID not found')
+      alert('Store ID not found. Please refresh the page.')
       return
     }
 
     try {
       setCreating(true)
       const categoryData = {
-        name: newCategory.name,
-        description: newCategory.description || '',
+        name: newCategory.name.trim(),
+        description: (newCategory.description || '').trim(),
         storeId: storeId,
       }
 
       await categoryAPI.create(categoryData)
       setIsAddDialogOpen(false)
+      // Reset form
       setNewCategory({ name: '', description: '' })
       await fetchCategories()
       await fetchProductCounts() // Refresh product counts
       alert('Category created successfully!')
     } catch (error) {
       console.error('Error creating category:', error)
-      alert(error.message || 'Failed to create category')
+      const errorMessage = error.message || 'Failed to create category'
+      if (errorMessage.includes('name') || errorMessage.includes('Name') || errorMessage.includes('duplicate')) {
+        alert(`Category name already exists. Please use a different name.\n\nError: ${errorMessage}`)
+      } else {
+        alert(`Failed to create category: ${errorMessage}`)
+      }
     } finally {
       setCreating(false)
     }

@@ -375,28 +375,53 @@ const ProductsPage = () => {
   }
 
   const handleCreateProduct = async () => {
-    if (!newProduct.name || !newProduct.sku) {
-      alert('Please fill in all required fields (Name, SKU)')
+    // Validate required fields
+    if (!newProduct.name || !newProduct.name.trim()) {
+      alert('Please enter a product name')
+      return
+    }
+
+    if (!newProduct.sku || !newProduct.sku.trim()) {
+      alert('Please enter a SKU (Stock Keeping Unit)')
+      return
+    }
+
+    // Validate selling price
+    if (!newProduct.sellingPrice || parseFloat(newProduct.sellingPrice) <= 0) {
+      alert('Please enter a valid selling price (must be greater than 0)')
+      return
+    }
+
+    // Validate MRP if provided
+    if (newProduct.mrp && parseFloat(newProduct.mrp) < 0) {
+      alert('MRP cannot be negative')
+      return
+    }
+
+    // Validate quantity
+    const quantity = parseInt(newProduct.quantity) || 0
+    if (quantity < 0) {
+      alert('Quantity cannot be negative')
       return
     }
 
     // Handle category - either use existing categoryId or create new one
     let finalCategoryId = null
     if (newProduct.categoryId === 'other') {
-      if (!newProduct.customCategory) {
+      if (!newProduct.customCategory || !newProduct.customCategory.trim()) {
         alert('Please enter a category name')
         return
       }
       // Create new category first
       try {
         const newCategory = await categoryAPI.create({
-          name: newProduct.customCategory,
+          name: newProduct.customCategory.trim(),
           storeId: storeId,
         })
         finalCategoryId = newCategory.id
       } catch (error) {
         console.error('Error creating category:', error)
-        alert('Failed to create category. Please try again.')
+        alert(error.message || 'Failed to create category. Please try again.')
         return
       }
     } else if (newProduct.categoryId) {
@@ -414,7 +439,7 @@ const ProductsPage = () => {
           finalCategoryId = newCategory.id
         } catch (error) {
           console.error('Error creating category:', error)
-          alert('Failed to create category. Please try again.')
+          alert(error.message || 'Failed to create category. Please try again.')
           return
         }
       } else {
@@ -426,27 +451,28 @@ const ProductsPage = () => {
     }
 
     if (!storeId) {
-      alert('Store ID not found')
+      alert('Store ID not found. Please refresh the page.')
       return
     }
 
     try {
       setCreating(true)
       const productData = {
-        name: newProduct.name,
-        description: newProduct.description || '',
-        sku: newProduct.sku,
+        name: newProduct.name.trim(),
+        description: (newProduct.description || '').trim(),
+        sku: newProduct.sku.trim(),
         mrp: newProduct.mrp ? parseFloat(newProduct.mrp) : null,
-        sellingPrice: newProduct.sellingPrice ? parseFloat(newProduct.sellingPrice) : null,
-        brand: newProduct.brand || '',
+        sellingPrice: parseFloat(newProduct.sellingPrice),
+        brand: (newProduct.brand || '').trim(),
         image: newProduct.image || '',
-        quantity: parseInt(newProduct.quantity) || 0,
+        quantity: quantity,
         storeId: storeId,
         categoryId: finalCategoryId,
       }
 
       await productAPI.create(productData)
       setIsAddDialogOpen(false)
+      // Reset form
       setNewProduct({
         name: '',
         description: '',
@@ -466,7 +492,12 @@ const ProductsPage = () => {
       alert('Product created successfully!')
     } catch (error) {
       console.error('Error creating product:', error)
-      alert(error.message || 'Failed to create product')
+      const errorMessage = error.message || 'Failed to create product'
+      if (errorMessage.includes('SKU') || errorMessage.includes('sku')) {
+        alert(`SKU already exists. Please use a unique SKU.\n\nError: ${errorMessage}`)
+      } else {
+        alert(`Failed to create product: ${errorMessage}`)
+      }
     } finally {
       setCreating(false)
     }

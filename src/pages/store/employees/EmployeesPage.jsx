@@ -134,28 +134,68 @@ const EmployeesPage = () => {
   }
 
   const handleAddEmployee = async () => {
-    if (!newEmployee.fullName || !newEmployee.email || !newEmployee.password) {
-      alert('Please fill in all required fields (Name, Email, Password)')
+    // Validate required fields
+    if (!newEmployee.fullName || !newEmployee.fullName.trim()) {
+      alert('Please enter employee full name')
+      return
+    }
+
+    if (!newEmployee.email || !newEmployee.email.trim()) {
+      alert('Please enter employee email address')
+      return
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(newEmployee.email.trim())) {
+      alert('Please enter a valid email address')
+      return
+    }
+
+    if (!newEmployee.password || newEmployee.password.length < 6) {
+      alert('Please enter a password (minimum 6 characters)')
+      return
+    }
+
+    if (!newEmployee.role) {
+      alert('Please select a role for the employee')
       return
     }
 
     if (!storeId) {
-      alert('Store ID not found')
+      alert('Store ID not found. Please refresh the page.')
       return
     }
 
     // Validate branch selection for branch-specific roles
-    if ((newEmployee.role === 'ROLE_BRANCH_MANAGER' || newEmployee.role === 'ROLE_BRANCH_CASHIER') && !newEmployee.branchId) {
-      alert('Branch is required for Branch Manager and Branch Cashier roles')
-      return
+    if ((newEmployee.role === 'ROLE_BRANCH_MANAGER' || newEmployee.role === 'ROLE_BRANCH_CASHIER')) {
+      if (!newEmployee.branchId) {
+        alert('Branch is required for Branch Manager and Branch Cashier roles')
+        return
+      }
+      // Check if branch exists
+      const selectedBranch = branches.find(b => b.id.toString() === newEmployee.branchId.toString())
+      if (!selectedBranch) {
+        alert('Selected branch not found. Please refresh and try again.')
+        return
+      }
+    }
+
+    // Validate phone if provided
+    if (newEmployee.phone && newEmployee.phone.trim()) {
+      const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/
+      if (!phoneRegex.test(newEmployee.phone.trim())) {
+        alert('Please enter a valid phone number')
+        return
+      }
     }
 
     try {
       setCreating(true)
       const employeeData = {
-        fullName: newEmployee.fullName,
-        email: newEmployee.email,
-        phone: newEmployee.phone || '',
+        fullName: newEmployee.fullName.trim(),
+        email: newEmployee.email.trim().toLowerCase(),
+        phone: (newEmployee.phone || '').trim(),
         password: newEmployee.password,
         role: newEmployee.role,
         branchId: newEmployee.branchId ? parseInt(newEmployee.branchId) : null,
@@ -163,6 +203,7 @@ const EmployeesPage = () => {
 
       await employeeAPI.createStoreEmployee(storeId, employeeData)
       setIsAddDialogOpen(false)
+      // Reset form
       setNewEmployee({
         fullName: '',
         email: '',
@@ -172,10 +213,16 @@ const EmployeesPage = () => {
         branchId: '',
       })
       fetchEmployees()
+      fetchBranches() // Refresh branches list
       alert('Employee created successfully!')
     } catch (error) {
       console.error('Error creating employee:', error)
-      alert(error.message || 'Failed to create employee')
+      const errorMessage = error.message || 'Failed to create employee'
+      if (errorMessage.includes('email') || errorMessage.includes('Email')) {
+        alert(`Email already exists. Please use a different email address.\n\nError: ${errorMessage}`)
+      } else {
+        alert(`Failed to create employee: ${errorMessage}`)
+      }
     } finally {
       setCreating(false)
     }
@@ -466,21 +513,29 @@ const EmployeesPage = () => {
               {(newEmployee.role === 'ROLE_BRANCH_MANAGER' || newEmployee.role === 'ROLE_BRANCH_CASHIER') && (
                 <div>
                   <Label htmlFor="branchId">Branch *</Label>
-                  <Select
-                    value={newEmployee.branchId}
-                    onValueChange={(value) => setNewEmployee({ ...newEmployee, branchId: value })}
-                  >
-                    <SelectTrigger className="mt-1 w-full">
-                      <SelectValue placeholder="Select branch" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {branches.map((branch) => (
-                        <SelectItem key={branch.id} value={branch.id.toString()}>
-                          {branch.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {branches.length === 0 ? (
+                    <div className="mt-1 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                      <p className="text-sm text-yellow-800">
+                        No branches available. Please create a branch first before adding branch employees.
+                      </p>
+                    </div>
+                  ) : (
+                    <Select
+                      value={newEmployee.branchId}
+                      onValueChange={(value) => setNewEmployee({ ...newEmployee, branchId: value })}
+                    >
+                      <SelectTrigger className="mt-1 w-full">
+                        <SelectValue placeholder="Select branch" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {branches.map((branch) => (
+                          <SelectItem key={branch.id} value={branch.id.toString()}>
+                            {branch.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               )}
             </div>

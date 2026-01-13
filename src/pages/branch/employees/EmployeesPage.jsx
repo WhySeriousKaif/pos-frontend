@@ -41,7 +41,7 @@ const EmployeesPage = () => {
   const [filteredEmployees, setFilteredEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [branchId, setBranchId] = useState(1)
+  const [branchId, setBranchId] = useState(null) // Start with null instead of 1
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [newEmployee, setNewEmployee] = useState({
     fullName: '',
@@ -53,8 +53,13 @@ const EmployeesPage = () => {
 
   useEffect(() => {
     fetchBranchId()
-    fetchEmployees()
   }, [])
+
+  useEffect(() => {
+    if (branchId) {
+      fetchEmployees()
+    }
+  }, [branchId])
 
   useEffect(() => {
     filterEmployees()
@@ -65,13 +70,22 @@ const EmployeesPage = () => {
       const profile = await userAPI.getProfile()
       if (profile?.branchId) {
         setBranchId(profile.branchId)
+      } else {
+        console.error('Branch ID not found in user profile. Branch manager must be assigned to a branch.')
+        alert('Branch not found. Please make sure your user is assigned to a branch.')
       }
     } catch (error) {
       console.error('Error fetching branch ID:', error)
+      alert('Failed to fetch branch information. Please refresh the page.')
     }
   }
 
   const fetchEmployees = async () => {
+    if (!branchId) {
+      console.error('Cannot fetch employees: branchId is not set')
+      return
+    }
+
     try {
       setLoading(true)
       // Fetch all users and filter by branch
@@ -137,6 +151,11 @@ const EmployeesPage = () => {
   }
 
   const handleAddEmployee = async () => {
+    if (!branchId) {
+      alert('Branch ID not found. Please refresh the page.')
+      return
+    }
+
     try {
       if (!newEmployee.fullName || !newEmployee.email || !newEmployee.password) {
         alert('Please fill all required fields (Name, Email, Password)')
