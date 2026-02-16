@@ -58,7 +58,13 @@ const OrdersPage = () => {
   const [paymentFilter, setPaymentFilter] = useState('all')
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
-  const [branchId, setBranchId] = useState(null) // Start with null instead of hardcoded 1
+  const [branchId, setBranchId] = useState(null)
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalElements, setTotalElements] = useState(0)
+  const pageSize = 10
 
   useEffect(() => {
     fetchBranchId()
@@ -66,9 +72,17 @@ const OrdersPage = () => {
 
   useEffect(() => {
     if (branchId) {
-      fetchOrders()
+      setCurrentPage(0) // Reset to first page on filter change
+      fetchOrders(0) // Fetch first page
     }
   }, [branchId, dateFilter, statusFilter, paymentFilter])
+
+  // Effect for page changes (when user clicks next/prev)
+  useEffect(() => {
+    if (branchId) {
+      fetchOrders(currentPage)
+    }
+  }, [currentPage])
 
   useEffect(() => {
     filterOrders()
@@ -90,40 +104,64 @@ const OrdersPage = () => {
     return format(new Date(dateTime), 'MMM d, yyyy, hh:mm a')
   }
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (page = 0) => {
+    if (!branchId) return;
+
     try {
       setLoading(true)
       let allOrders = []
-      
-      if (dateFilter === 'today') {
-        allOrders = await orderAPI.getTodayByBranch(branchId)
+
+      // Use Paged API only if looking at "All Time" with no other filters
+      // This prevents loading massive datasets
+      const isAllTime = dateFilter === 'all'
+      const isNoFilters = statusFilter === 'all' && paymentFilter === 'all'
+
+      if (isAllTime && isNoFilters) {
+        const response = await orderAPI.getByBranchPaged(branchId, page, pageSize)
+        // response.content contains the list, response has page stats
+        allOrders = response.content || []
+        setTotalPages(response.totalPages || 0)
+        setTotalElements(response.totalElements || 0)
       } else {
-        const filters = {}
-        if (statusFilter !== 'all') filters.orderStatus = statusFilter
-        if (paymentFilter !== 'all') filters.paymentType = paymentFilter
-        allOrders = await orderAPI.getByBranch(branchId, filters)
+        // Use existing endpoints for specific filters
+        // These don't support backend pagination yet, but result sets should be smaller
+        setTotalPages(0) // Disable pagination UI for filtered views
+
+        if (dateFilter === 'today') {
+          allOrders = await orderAPI.getTodayByBranch(branchId)
+        } else {
+          const filters = {}
+          if (statusFilter !== 'all') filters.orderStatus = statusFilter
+          if (paymentFilter !== 'all') filters.paymentType = paymentFilter
+          allOrders = await orderAPI.getByBranch(branchId, filters)
+        }
+
+        // Client-side date filtering for week/month
+        let filtered = allOrders || []
+        if (dateFilter === 'week') {
+          const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 })
+          filtered = filtered.filter(order => new Date(order.createdAt) >= weekStart)
+        } else if (dateFilter === 'month') {
+          const monthStart = startOfMonth(new Date())
+          filtered = filtered.filter(order => new Date(order.createdAt) >= monthStart)
+        }
+
+        // Client-side filtering for combinations not handled by backend
+        if (!isAllTime) {
+          if (statusFilter !== 'all' && dateFilter !== 'today') {
+            filtered = filtered.filter(order => order.status === statusFilter)
+          }
+          if (paymentFilter !== 'all' && dateFilter !== 'today') {
+            filtered = filtered.filter(order => order.paymentType === paymentFilter)
+          }
+        }
+
+        // Sort client-side for non-paged results
+        filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        allOrders = filtered
       }
 
-      // Additional client-side filtering for date ranges
-      let filtered = allOrders || []
-      if (dateFilter === 'week') {
-        const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 })
-        filtered = filtered.filter(order => new Date(order.createdAt) >= weekStart)
-      } else if (dateFilter === 'month') {
-        const monthStart = startOfMonth(new Date())
-        filtered = filtered.filter(order => new Date(order.createdAt) >= monthStart)
-      }
-
-      // Additional status and payment filtering if needed
-      if (statusFilter !== 'all' && dateFilter !== 'today') {
-        filtered = filtered.filter(order => order.status === statusFilter)
-      }
-      if (paymentFilter !== 'all' && dateFilter !== 'today') {
-        filtered = filtered.filter(order => order.paymentType === paymentFilter)
-      }
-
-      filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      setOrders(filtered)
+      setOrders(allOrders)
     } catch (error) {
       console.error('Error fetching orders:', error)
       setOrders([])
@@ -133,6 +171,7 @@ const OrdersPage = () => {
   }
 
   const filterOrders = () => {
+    // Client-side search (applies to the current "page" of fetched orders)
     if (!searchQuery.trim()) {
       setFilteredOrders(orders)
       return
@@ -168,7 +207,6 @@ const OrdersPage = () => {
   }
 
   const handlePrintOrder = async (order) => {
-    // Generate and download PDF invoice
     try {
       const { downloadInvoicePDF } = await import('@/utils/invoiceGenerator')
       downloadInvoicePDF(order)
@@ -191,6 +229,12 @@ const OrdersPage = () => {
     }
   }
 
+  const handlePageChange = (newPage) => {
+    if (newPage >= 0 && newPage < totalPages) {
+      setCurrentPage(newPage)
+    }
+  }
+
   return (
     <div className="h-full overflow-auto p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
@@ -198,7 +242,7 @@ const OrdersPage = () => {
           <h1 className="text-3xl font-bold">Orders</h1>
           <p className="text-muted-foreground mt-1">Manage and view all branch orders</p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchOrders}>
+        <Button variant="outline" size="sm" onClick={() => fetchOrders(currentPage)}>
           <RefreshCw className="size-4 mr-2" /> Refresh
         </Button>
       </div>
@@ -232,7 +276,7 @@ const OrdersPage = () => {
                 <SelectItem value="today">Today</SelectItem>
                 <SelectItem value="week">This Week</SelectItem>
                 <SelectItem value="month">This Month</SelectItem>
-                <SelectItem value="all">All Time</SelectItem>
+                <SelectItem value="all">All Time (Paged)</SelectItem>
               </SelectContent>
             </Select>
 
@@ -277,76 +321,103 @@ const OrdersPage = () => {
               </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order ID</TableHead>
-                  <TableHead>Date/Time</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-medium">#{order.id}</TableCell>
-                    <TableCell>{formatDateTime(order.createdAt)}</TableCell>
-                    <TableCell>
-                      {typeof order.customer === 'string'
-                        ? order.customer
-                        : (order.customer?.name || order.customer?.fullName || 'Walk-in')}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      ₹{order.totalAmount?.toFixed(2) || '0.00'}
-                    </TableCell>
-                    <TableCell>
-                      <span className="inline-flex items-center gap-1">
-                        {getPaymentIcon(order.paymentType)}
-                        {order.paymentType || 'N/A'}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={cn(
-                          'px-2 py-1 rounded text-xs font-medium',
-                          order.status === 'COMPLETED' && 'bg-green-100 text-green-800',
-                          order.status === 'PENDING' && 'bg-yellow-100 text-yellow-800',
-                          order.status === 'CANCELLED' && 'bg-red-100 text-red-800',
-                          !order.status && 'bg-gray-100 text-gray-800'
-                        )}
-                      >
-                        {order.status || 'N/A'}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          onClick={() => handleViewOrder(order.id)}
-                          title="View Order"
-                        >
-                          <Eye className="size-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          onClick={() => handlePrintOrder(order)}
-                          title="Print Order"
-                        >
-                          <Printer className="size-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Order ID</TableHead>
+                    <TableHead>Date/Time</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Payment</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredOrders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-medium">#{order.id}</TableCell>
+                      <TableCell>{formatDateTime(order.createdAt)}</TableCell>
+                      <TableCell>
+                        {typeof order.customer === 'string'
+                          ? order.customer
+                          : (order.customer?.name || order.customer?.fullName || 'Walk-in')}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        ₹{order.totalAmount?.toFixed(2) || '0.00'}
+                      </TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center gap-1">
+                          {getPaymentIcon(order.paymentType)}
+                          {order.paymentType || 'N/A'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={cn(
+                            'px-2 py-1 rounded text-xs font-medium',
+                            order.status === 'COMPLETED' && 'bg-green-100 text-green-800',
+                            order.status === 'PENDING' && 'bg-yellow-100 text-yellow-800',
+                            order.status === 'CANCELLED' && 'bg-red-100 text-red-800',
+                            !order.status && 'bg-gray-100 text-gray-800'
+                          )}
+                        >
+                          {order.status || 'N/A'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handleViewOrder(order.id)}
+                            title="View Order"
+                          >
+                            <Eye className="size-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => handlePrintOrder(order)}
+                            title="Print Order"
+                          >
+                            <Printer className="size-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-end p-4 gap-2 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 0}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {currentPage + 1} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages - 1}
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
@@ -457,6 +528,5 @@ const OrdersPage = () => {
     </div>
   )
 }
-
 export default OrdersPage
 

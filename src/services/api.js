@@ -90,6 +90,15 @@ export const orderAPI = {
     const queryString = params.toString();
     return apiCall(`/orders/branch/${branchId}${queryString ? `?${queryString}` : ''}`);
   },
+  getByBranchPaged: (branchId, page = 0, size = 10, sortBy = 'createdAt', direction = 'desc') => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: size.toString(),
+      sortBy,
+      direction,
+    });
+    return apiCall(`/orders/branch/${branchId}/paged?${params.toString()}`);
+  },
   getTodayByBranch: (branchId) => apiCall(`/orders/today/branch/${branchId}`),
   getRecentByBranch: (branchId) => apiCall(`/orders/recent/${branchId}`),
   create: (orderDto) => apiCall('/orders', {
