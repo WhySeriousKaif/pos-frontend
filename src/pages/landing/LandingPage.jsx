@@ -140,7 +140,7 @@ const LandingPage = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center gap-2">
-              <img src={logoP} alt="POS Pro" className="h-10 w-10 object-contain" />
+              <img src={logoP} alt="POS Pro" className="h-10 w-10 object-contain rounded-full" />
               <span className="text-xl font-bold text-gray-900 dark:text-white">POS Pro</span>
             </div>
 
@@ -538,7 +538,7 @@ const LandingPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <img src={logoP} alt="POS Pro" className="h-10 w-10 object-contain" />
+                <img src={logoP} alt="POS Pro" className="h-10 w-10 object-contain rounded-full" />
                 <span className="text-xl font-bold text-white">POS Pro</span>
               </div>
               <p className="text-sm">
