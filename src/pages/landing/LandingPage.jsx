@@ -22,6 +22,8 @@ import {
   Moon,
 } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
+import logoP from '@/assets/logo_p.png'
+import videoKaif from '@/assets/videoKaif.mp4'
 
 const LandingPage = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -130,7 +132,7 @@ const LandingPage = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center gap-2">
-              <img src="/logo_p.png" alt="POS Pro" className="h-10 w-10 object-contain" />
+              <img src={logoP} alt="POS Pro" className="h-10 w-10 object-contain" />
               <span className="text-xl font-bold text-gray-900 dark:text-white">POS Pro</span>
             </div>
 
@@ -303,7 +305,7 @@ const LandingPage = () => {
         <div className="mt-16 relative w-full max-w-[98%] mx-auto">
           <div className="absolute inset-0 bg-blue-600/5 blur-3xl rounded-full transform scale-150 opacity-50"></div>
           <video
-            src="/videoKaif.mp4"
+            src={videoKaif}
             autoPlay
             loop
             muted
@@ -527,7 +529,7 @@ const LandingPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <img src="/logo_p.png" alt="POS Pro" className="h-10 w-10 object-contain" />
+                <img src={logoP} alt="POS Pro" className="h-10 w-10 object-contain" />
                 <span className="text-xl font-bold text-white">POS Pro</span>
               </div>
               <p className="text-sm">
