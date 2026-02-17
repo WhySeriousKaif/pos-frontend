@@ -22,8 +22,9 @@ import {
   Moon,
 } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
-import logoP from '@/assets/logo_p.png'
+import logoP from '@/assets/logo_p_transparent.png'
 import videoKaif from '@/assets/videoKaif.mp4'
+import video2 from '@/assets/video 2.mp4'
 
 const LandingPage = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -123,6 +124,13 @@ const LandingPage = () => {
       rating: 5,
     },
   ]
+
+  const videos = [videoKaif, video2]
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0)
+
+  const handleVideoEnded = () => {
+    setCurrentVideoIndex((prevIndex) => (prevIndex + 1) % videos.length)
+  }
 
   return (
     <div className={`min-h-screen ${darkMode ? 'dark bg-gray-900' : 'bg-white'}`}>
@@ -305,11 +313,12 @@ const LandingPage = () => {
         <div className="mt-16 relative w-full max-w-[98%] mx-auto">
           <div className="absolute inset-0 bg-blue-600/5 blur-3xl rounded-full transform scale-150 opacity-50"></div>
           <video
-            src={videoKaif}
+            key={currentVideoIndex}
+            src={videos[currentVideoIndex]}
             autoPlay
-            loop
             muted
             playsInline
+            onEnded={handleVideoEnded}
             className="relative rounded-2xl shadow-2xl border-4 border-white dark:border-gray-800 w-full h-auto transform hover:scale-[1.005] transition-transform duration-500"
           />
         </div>
