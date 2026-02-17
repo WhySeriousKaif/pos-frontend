@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
@@ -294,10 +294,12 @@ const LandingPage = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               size="lg"
-              onClick={() => navigate('/auth/register')}
               className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-6"
+              asChild
             >
-              Get Started <ArrowRight className="ml-2 h-5 w-5" />
+              <Link to="/auth/register">
+                Get Started <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
             </Button>
             <Button
               size="lg"
@@ -516,10 +518,12 @@ const LandingPage = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               size="lg"
-              onClick={() => navigate('/auth/register')}
               className="bg-white text-blue-600 hover:bg-gray-100 text-lg px-8 py-6"
+              asChild
             >
-              Start Free Trial
+              <Link to="/auth/register">
+                Start Free Trial
+              </Link>
             </Button>
             <Button
               size="lg"
