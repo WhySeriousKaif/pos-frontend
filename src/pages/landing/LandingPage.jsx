@@ -130,9 +130,7 @@ const LandingPage = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center gap-2">
-              <div className="h-10 w-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <ShoppingCart className="h-6 w-6 text-white" />
-              </div>
+              <img src="/logo_p.png" alt="POS Pro" className="h-10 w-10 object-contain" />
               <span className="text-xl font-bold text-gray-900 dark:text-white">POS Pro</span>
             </div>
 
@@ -300,6 +298,19 @@ const LandingPage = () => {
             </Button>
           </div>
         </div>
+
+        {/* Hero Video - Wide Layout */}
+        <div className="mt-16 relative w-full max-w-[98%] mx-auto">
+          <div className="absolute inset-0 bg-blue-600/5 blur-3xl rounded-full transform scale-150 opacity-50"></div>
+          <video
+            src="/videoKaif.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="relative rounded-2xl shadow-2xl border-4 border-white dark:border-gray-800 w-full h-auto transform hover:scale-[1.005] transition-transform duration-500"
+          />
+        </div>
       </section>
 
       {/* Features Section */}
@@ -397,11 +408,10 @@ const LandingPage = () => {
             {pricingPlans.map((plan, index) => (
               <Card
                 key={index}
-                className={`relative border-2 ${
-                  plan.popular
-                    ? 'border-blue-600 dark:border-blue-400 shadow-xl scale-105'
-                    : 'border-gray-200 dark:border-gray-700'
-                }`}
+                className={`relative border-2 ${plan.popular
+                  ? 'border-blue-600 dark:border-blue-400 shadow-xl scale-105'
+                  : 'border-gray-200 dark:border-gray-700'
+                  }`}
               >
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
@@ -429,11 +439,10 @@ const LandingPage = () => {
                     ))}
                   </ul>
                   <Button
-                    className={`w-full ${
-                      plan.popular
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                        : 'bg-gray-900 hover:bg-gray-800 text-white dark:bg-gray-700 dark:hover:bg-gray-600'
-                    }`}
+                    className={`w-full ${plan.popular
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-gray-900 hover:bg-gray-800 text-white dark:bg-gray-700 dark:hover:bg-gray-600'
+                      }`}
                     onClick={() => navigate('/auth/register')}
                   >
                     Get Started
@@ -518,9 +527,7 @@ const LandingPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <ShoppingCart className="h-5 w-5 text-white" />
-                </div>
+                <img src="/logo_p.png" alt="POS Pro" className="h-10 w-10 object-contain" />
                 <span className="text-xl font-bold text-white">POS Pro</span>
               </div>
               <p className="text-sm">
