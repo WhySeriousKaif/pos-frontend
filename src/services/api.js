@@ -31,7 +31,7 @@ const apiCall = async (endpoint, options = {}) => {
         localStorage.removeItem('authToken');
         throw new Error('Authentication required. Please login again.');
       }
-      
+
       // Try to parse error message from response
       try {
         const error = await response.json();
@@ -46,7 +46,7 @@ const apiCall = async (endpoint, options = {}) => {
     if (contentType && contentType.includes('application/json')) {
       return await response.json();
     }
-    
+
     // Return null for empty responses
     return null;
   } catch (error) {
@@ -326,6 +326,13 @@ export const inventoryAPI = {
   }),
   delete: (id) => apiCall(`/inventories/${id}`, {
     method: 'DELETE',
+  }),
+};
+
+// Payment API
+export const paymentAPI = {
+  createOrder: (data) => apiCall(`/payments/create-order?amount=${data.amount}&currency=${data.currency}`, {
+    method: 'POST',
   }),
 };
 

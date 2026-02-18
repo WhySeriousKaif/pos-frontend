@@ -17,7 +17,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useCart } from '@/contexts/CartContext'
-import { customerAPI, orderAPI } from '@/services/api'
+import { customerAPI, orderAPI, paymentAPI } from '@/services/api'
 import { User, Tag, FileText, DollarSign, CreditCard, Pause } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
@@ -85,11 +85,65 @@ const CustomerPaymentSection = () => {
       setProcessing(true)
       setError(null)
 
+      const orderData = {
+        amount: total,
+        currency: 'INR', // Or dynamic currency
+      }
+
+
+      if (paymentType === 'UPI' || paymentType === 'CARD') {
+        // Create order on backend to get Razorpay Order ID
+        const response = await paymentAPI.createOrder(orderData);
+        // Ensure response structure matches what backend returns
+        const { id: order_id, currency, amount, key } = response;
+
+        const options = {
+          key: key || "rzp_test_MwXi3d9f7g1t8Z", // Use key from backend or fallback to test key
+          amount: amount,
+          currency: currency,
+          name: "Molla POS",
+          description: "Payment for Order",
+          order_id: order_id,
+          handler: async function (response) {
+            // Payment success - create order in backend
+            await createBackendOrder(response.razorpay_payment_id, response.razorpay_order_id, response.razorpay_signature);
+          },
+          prefill: {
+            name: selectedCustomer?.name || "",
+            email: selectedCustomer?.email || "",
+            contact: selectedCustomer?.phone || ""
+          },
+          theme: {
+            color: "#3399cc"
+          }
+        };
+
+        const rzp1 = new window.Razorpay(options);
+        rzp1.on('payment.failed', function (response) {
+          setError(`Payment Failed: ${response.error.description}`);
+          setProcessing(false);
+        });
+        rzp1.open();
+
+      } else {
+        // Cash payment
+        await createBackendOrder();
+      }
+
+    } catch (err) {
+      console.error('Error processing payment:', err)
+      setError('Failed to process payment: ' + err.message)
+      setProcessing(false);
+    }
+  }
+
+  const createBackendOrder = async (paymentId, razorpayOrderId, signature) => {
+    try {
       // Prepare order data
       const orderDto = {
-        branchId: 1, // Default branch for testing
-        cashierId: 1, // Default cashier for testing
-        customerId: selectedCustomer?.id || null,
+        branchId: 1, // Default branch 
+        cashierId: 1, // Default cashier
+        customerId: selectedCustomer?.id || null, // Allow null for walk-in
         paymentType: paymentType,
         status: 'COMPLETED',
         orderItems: cartItems.map(item => ({
@@ -98,20 +152,20 @@ const CustomerPaymentSection = () => {
           price: item.price,
         })),
         totalAmount: total,
+        // You might want to save payment details too
       }
 
       // Create order
       const createdOrder = await orderAPI.create(orderDto)
-      
+
       // Clear cart after successful order
       clearCart()
-      
+
       // Show success message
       alert(`Order created successfully! Order ID: ${createdOrder.id}`)
-      
     } catch (err) {
-      console.error('Error processing payment:', err)
-      setError('Failed to process payment: ' + err.message)
+      console.error('Error creating backend order:', err)
+      setError('Payment successful but failed to create order: ' + err.message)
     } finally {
       setProcessing(false)
     }
@@ -121,20 +175,20 @@ const CustomerPaymentSection = () => {
     <div className='w-full lg:w-1/5 flex flex-col bg-card gap-3 sm:gap-4 p-3 sm:p-4 min-h-0 overflow-y-auto'>
       {/* Customer Section */}
       <Card>
-      <CardHeader className="p-2 pb-1">
+        <CardHeader className="p-2 pb-1">
           <CardTitle className='text-xs sm:text-sm flex items-center gap-2'>
             <User className='size-3 sm:size-4' />
             Customer
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2 pt-0">          <Button
-            variant='outline'
-            className='w-full justify-start gap-2 text-xs sm:text-sm h-9 sm:h-10'
-            onClick={() => setIsCustomerDialogOpen(true)}
-          >
-            <User className='size-3 sm:size-4' />
-            <span className='truncate'>{selectedCustomer ? selectedCustomer.name : 'Select Customer'}</span>
-          </Button>
+          variant='outline'
+          className='w-full justify-start gap-2 text-xs sm:text-sm h-9 sm:h-10'
+          onClick={() => setIsCustomerDialogOpen(true)}
+        >
+          <User className='size-3 sm:size-4' />
+          <span className='truncate'>{selectedCustomer ? selectedCustomer.name : 'Select Customer'}</span>
+        </Button>
           {selectedCustomer && (
             <div className='mt-2 text-[10px] sm:text-xs text-muted-foreground space-y-0.5'>
               <p className='truncate'>{selectedCustomer.email}</p>
@@ -146,7 +200,7 @@ const CustomerPaymentSection = () => {
 
       {/* Discount Section */}
       <Card>
-      <CardHeader className="p-2 pb-1">
+        <CardHeader className="p-2 pb-1">
           <CardTitle className='text-xs sm:text-sm flex items-center gap-2'>
             <Tag className='size-3 sm:size-4' />
             Discount
@@ -184,7 +238,7 @@ const CustomerPaymentSection = () => {
 
       {/* Order Note Section */}
       <Card>
-      <CardHeader className="p-3 pb-1">
+        <CardHeader className="p-3 pb-1">
           <CardTitle className='text-xs sm:text-sm  flex items-center gap-2 mb-0'>
             <FileText className='size-3 sm:size-4' />
             Order Note
@@ -202,7 +256,7 @@ const CustomerPaymentSection = () => {
 
       {/* Payment Type */}
       <Card>
-      <CardHeader className="p-3 pb-1">
+        <CardHeader className="p-3 pb-1">
           <CardTitle className='text-xs sm:text-sm flex items-center gap-2'>
             <CreditCard className='size-3 sm:size-4' />
             Payment Method
