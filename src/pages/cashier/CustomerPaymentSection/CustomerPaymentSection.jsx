@@ -115,6 +115,12 @@ const CustomerPaymentSection = () => {
           },
           theme: {
             color: "#3399cc"
+          },
+          modal: {
+            ondismiss: function () {
+              setProcessing(false);
+              setError("Payment Cancelled: Order was not placed.");
+            }
           }
         };
 

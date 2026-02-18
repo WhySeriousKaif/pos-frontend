@@ -6,12 +6,13 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { loginUser, clearError } from '@/store/slices/authSlice'
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
+import { shiftReportAPI } from '@/services/api'
 
 const Login = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const { loading, error, isAuthenticated, user } = useSelector((state) => state.auth)
-  
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -65,7 +66,7 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!formData.email || !formData.password) {
       return
     }
@@ -73,6 +74,17 @@ const Login = () => {
     try {
       const result = await dispatch(loginUser(formData))
       if (loginUser.fulfilled.match(result)) {
+        // Auto-start shift for cashiers
+        const user = result.payload.user;
+        const role = user.role;
+        if (role === 'ROLE_BRANCH_CASHIER' || role === 'ROLE_CASHIER') {
+          try {
+            await shiftReportAPI.startShift(user.id, user.branchId);
+          } catch (shiftError) {
+            console.error("Failed to auto-start shift:", shiftError);
+            // Continue login even if shift start fails (user might have active shift)
+          }
+        }
         // Navigation will happen in useEffect
       }
     } catch (err) {

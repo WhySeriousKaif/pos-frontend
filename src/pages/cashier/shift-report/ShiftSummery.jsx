@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import ShiftReportHeader from "./ShiftReportHeader";
 import ShiftInformation from "./ShiftInformation";
 import SalesSummery from "./SalesSummery";
@@ -9,20 +10,23 @@ import RefundsTable from "./RefundsTable";
 import { shiftReportAPI } from "@/services/api";
 
 const ShiftSummery = () => {
+  const { user } = useSelector((state) => state.auth);
   const [shiftData, setShiftData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchShiftData();
-  }, []);
+    if (user?.id) {
+      fetchShiftData();
+    }
+  }, [user]);
 
   const fetchShiftData = async () => {
     try {
       setLoading(true);
       setError(null);
-      // Try to get current shift progress (use cashierId=1 for testing)
-      const data = await shiftReportAPI.getCurrent(1);
+      // Get current shift progress for logged-in cashier
+      const data = await shiftReportAPI.getCurrent(user.id);
       setShiftData(data);
     } catch (err) {
       console.error('Error fetching shift data:', err);
@@ -70,6 +74,22 @@ const ShiftSummery = () => {
     }
   };
 
+  const handleStartShift = async () => {
+    try {
+      setLoading(true);
+      // We need branchId. User object has it? 
+      // user.branchId or user.store?.branches? -> let's assume user.branchId exists or fallback.
+      // Actually OrderServiceImpl logic suggests user has branch.
+      await shiftReportAPI.startShift(user.id, user.branchId || 1);
+      await fetchShiftData();
+    } catch (err) {
+      console.error("Failed to manual start shift:", err);
+      setError("Failed to start shift: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -78,9 +98,16 @@ const ShiftSummery = () => {
     );
   }
 
+  const isShiftActive = shiftData && shiftData.shiftStart && !shiftData.shiftEnd;
+
   return (
     <div className="h-full w-full flex flex-col bg-background">
-      <ShiftReportHeader onPrint={handlePrint} onEndShift={handleEndShift} />
+      <ShiftReportHeader
+        onPrint={handlePrint}
+        onEndShift={handleEndShift}
+        onStartShift={handleStartShift}
+        shiftStarted={isShiftActive}
+      />
       <div className="flex-1 overflow-auto p-4">
         {error && (
           <div className="mb-4 p-3 bg-destructive/10 text-destructive rounded-lg text-sm">
