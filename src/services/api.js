@@ -219,14 +219,13 @@ export const storeAPI = {
     method: 'DELETE',
   }),
   moderate: (id, status) => {
-    // The backend expects the status as a request parameter or in the body
-    // Based on the controller, it seems to expect it in the body
+    // Backend expects a StoreStatusDto: { "status": "ACTIVE" }
     return apiCall(`/stores/${id}/moderate`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(status),
+      body: JSON.stringify({ status }),
     })
   },
 };
@@ -333,6 +332,32 @@ export const inventoryAPI = {
 export const paymentAPI = {
   createOrder: (data) => apiCall(`/payments/create-order?amount=${data.amount}&currency=${data.currency}`, {
     method: 'POST',
+  }),
+};
+
+// Subscription Plan API
+export const subscriptionPlanAPI = {
+  getAll: () => apiCall('/subscription-plans'),
+  getById: (id) => apiCall(`/subscription-plans/${id}`),
+  create: (planDto) => apiCall('/subscription-plans', {
+    method: 'POST',
+    body: JSON.stringify(planDto),
+  }),
+  update: (id, planDto) => apiCall(`/subscription-plans/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(planDto),
+  }),
+  delete: (id) => apiCall(`/subscription-plans/${id}`, {
+    method: 'DELETE',
+  }),
+};
+
+// System Settings API
+export const settingsAPI = {
+  get: () => apiCall('/settings'),
+  update: (settingsDto) => apiCall('/settings', {
+    method: 'PUT',
+    body: JSON.stringify(settingsDto),
   }),
 };
 

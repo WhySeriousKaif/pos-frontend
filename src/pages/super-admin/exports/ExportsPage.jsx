@@ -14,6 +14,48 @@ import { Download, FileText, Database, Users, Store, ShoppingCart } from 'lucide
 import { format } from 'date-fns'
 import { storeAPI, userAPI, orderAPI, branchAPI } from '@/services/api'
 
+// Returns [start, end) for the selected date range, or null for "all time" / invalid custom range
+const resolveDateRange = (dateRange, startDate, endDate) => {
+  const now = new Date()
+  switch (dateRange) {
+    case 'today': {
+      const start = new Date(now)
+      start.setHours(0, 0, 0, 0)
+      return [start, now]
+    }
+    case 'week': {
+      const start = new Date(now)
+      start.setDate(start.getDate() - 7)
+      return [start, now]
+    }
+    case 'month': {
+      const start = new Date(now)
+      start.setDate(start.getDate() - 30)
+      return [start, now]
+    }
+    case 'year': {
+      const start = new Date(now)
+      start.setFullYear(start.getFullYear() - 1)
+      return [start, now]
+    }
+    case 'custom':
+      if (!startDate || !endDate) return null
+      return [new Date(startDate), new Date(new Date(endDate).setHours(23, 59, 59, 999))]
+    default:
+      return null
+  }
+}
+
+const filterByDateRange = (items, range) => {
+  if (!range) return items
+  const [start, end] = range
+  return items.filter((item) => {
+    if (!item.createdAt) return false
+    const created = new Date(item.createdAt)
+    return created >= start && created <= end
+  })
+}
+
 const ExportsPage = () => {
   const [exportType, setExportType] = useState('stores')
   const [dateRange, setDateRange] = useState('all')
@@ -29,9 +71,23 @@ const ExportsPage = () => {
     { value: 'branches', label: 'Branches', icon: Store },
   ]
 
+  // Every store's branches, fetched once and reused by both the orders and branches exports
+  const getAllBranchesAcrossStores = async () => {
+    const allStores = await storeAPI.getAll()
+    const branchArrays = await Promise.all(
+      allStores.map((store) => branchAPI.getByStoreId(store.id).catch(() => []))
+    )
+    return branchArrays.flat()
+  }
+
   const handleExport = async () => {
     try {
       setExporting(true)
+      const range = resolveDateRange(dateRange, startDate, endDate)
+      if (dateRange === 'custom' && !range) {
+        alert('Please choose a start and end date for a custom range')
+        return
+      }
 
       let data = []
       let filename = ''
@@ -42,27 +98,31 @@ const ExportsPage = () => {
           filename = `stores-export-${format(new Date(), 'yyyy-MM-dd')}`
           break
         case 'users':
-          // Note: userAPI.getAll() may not exist, using placeholder
-          data = []
+          data = await userAPI.getAll()
           filename = `users-export-${format(new Date(), 'yyyy-MM-dd')}`
-          alert('User export feature requires backend API implementation')
           break
-        case 'orders':
-          // Get orders from all branches
-          const branches = await branchAPI.getByStoreId(1).catch(() => [])
+        case 'orders': {
+          const branches = await getAllBranchesAcrossStores()
           const ordersArrays = await Promise.all(
-            branches.map(branch => orderAPI.getByBranch(branch.id).catch(() => []))
+            branches.map((branch) => orderAPI.getByBranch(branch.id).catch(() => []))
           )
           data = ordersArrays.flat()
           filename = `orders-export-${format(new Date(), 'yyyy-MM-dd')}`
           break
+        }
         case 'branches':
-          const allBranches = await branchAPI.getByStoreId(1).catch(() => [])
-          data = allBranches
+          data = await getAllBranchesAcrossStores()
           filename = `branches-export-${format(new Date(), 'yyyy-MM-dd')}`
           break
         default:
           data = []
+      }
+
+      data = filterByDateRange(data, range)
+
+      if (data.length === 0) {
+        alert('No data to export for the selected range')
+        return
       }
 
       if (formatType === 'csv') {
@@ -71,7 +131,7 @@ const ExportsPage = () => {
         exportToJSON(data, filename)
       }
 
-      alert('Export completed successfully!')
+      alert(`Export completed successfully! (${data.length} records)`)
     } catch (error) {
       console.error('Error exporting data:', error)
       alert('Failed to export data')
@@ -126,8 +186,8 @@ const ExportsPage = () => {
   return (
     <div className="h-full overflow-auto p-4 sm:p-6">
       <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold">Exports</h1>
-        <p className="text-muted-foreground mt-1">Export system data in various formats</p>
+        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">Exports</h1>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">Export system data in various formats</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

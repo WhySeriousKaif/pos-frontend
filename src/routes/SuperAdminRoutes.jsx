@@ -8,6 +8,7 @@ import SubscriptionPlansPage from '@/pages/super-admin/subscription-plans/Subscr
 import ExportsPage from '@/pages/super-admin/exports/ExportsPage'
 import SettingsPage from '@/pages/super-admin/settings/SettingsPage'
 import SalesPage from '@/pages/super-admin/sales/SalesPage'
+import UsersPage from '@/pages/super-admin/users/UsersPage'
 
 const SuperAdminRoutes = () => {
   return (
@@ -16,6 +17,7 @@ const SuperAdminRoutes = () => {
         <Route index element={<Dashboard />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="stores" element={<StoresPage />} />
+        <Route path="users" element={<UsersPage />} />
         <Route path="subscription-plans" element={<SubscriptionPlansPage />} />
         <Route path="pending-requests" element={<PendingRequestsPage />} />
         <Route path="exports" element={<ExportsPage />} />

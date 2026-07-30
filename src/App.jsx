@@ -10,6 +10,7 @@ import SuperAdminRoutes from './routes/SuperAdminRoutes'
 import AuthRoutes from './routes/AuthRoutes'
 import ProtectedRoute from './components/ProtectedRoute'
 import LandingPage from './pages/landing/LandingPage'
+import ContactPage from './pages/contact/ContactPage'
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Routes>
             {/* Landing page - show for unauthenticated users */}
             <Route path="/" element={<LandingPage />} />
+            <Route path="/contact" element={<ContactPage />} />
             <Route path="/auth/*" element={<AuthRoutes />} />
             <Route
               path="/cashier/*"

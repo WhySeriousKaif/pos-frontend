@@ -15,22 +15,21 @@ import {
   Database,
   Server,
 } from 'lucide-react'
-import { userAPI } from '@/services/api'
+import { userAPI, settingsAPI } from '@/services/api'
 
 const SuperAdminSettingsPage = () => {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [userInfo, setUserInfo] = useState(null)
   const [settings, setSettings] = useState({
-    systemName: 'POS System',
-    systemEmail: 'admin@pos.com',
+    systemName: '',
+    systemEmail: '',
     systemPhone: '',
     maintenanceMode: false,
     allowRegistration: true,
     maxStoresPerAdmin: 1,
-    sessionTimeout: 30,
+    sessionTimeoutMinutes: 30,
     emailNotifications: true,
-    smsNotifications: false,
   })
 
   useEffect(() => {
@@ -40,8 +39,18 @@ const SuperAdminSettingsPage = () => {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const profile = await userAPI.getProfile()
+      const [profile, systemSettings] = await Promise.all([
+        userAPI.getProfile(),
+        settingsAPI.get(),
+      ])
       setUserInfo(profile)
+      setSettings((prev) => ({
+        ...prev,
+        ...systemSettings,
+        systemName: systemSettings.systemName || '',
+        systemEmail: systemSettings.systemEmail || '',
+        systemPhone: systemSettings.systemPhone || '',
+      }))
     } catch (error) {
       console.error('Error fetching settings data:', error)
     } finally {
@@ -52,9 +61,9 @@ const SuperAdminSettingsPage = () => {
   const handleSave = async () => {
     try {
       setSaving(true)
-      // TODO: Implement backend API for saving system settings
-      // await settingsAPI.update(settings)
-      alert('Settings saved successfully! (Backend API to be implemented)')
+      const updated = await settingsAPI.update(settings)
+      setSettings((prev) => ({ ...prev, ...updated }))
+      alert('Settings saved successfully!')
     } catch (error) {
       console.error('Error saving settings:', error)
       alert('Failed to save settings')
@@ -74,8 +83,8 @@ const SuperAdminSettingsPage = () => {
   return (
     <div className="h-full overflow-auto p-4 sm:p-6">
       <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground mt-1">Manage system-wide settings and configuration</p>
+        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">Settings</h1>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">Manage system-wide settings and configuration</p>
       </div>
 
       <div className="space-y-6">
@@ -172,8 +181,8 @@ const SuperAdminSettingsPage = () => {
                 <Input
                   id="sessionTimeout"
                   type="number"
-                  value={settings.sessionTimeout}
-                  onChange={(e) => setSettings({ ...settings, sessionTimeout: parseInt(e.target.value) || 30 })}
+                  value={settings.sessionTimeoutMinutes}
+                  onChange={(e) => setSettings({ ...settings, sessionTimeoutMinutes: parseInt(e.target.value) || 30 })}
                   className="mt-1"
                 />
               </div>
@@ -219,26 +228,13 @@ const SuperAdminSettingsPage = () => {
             <div className="flex items-center justify-between">
               <div>
                 <Label htmlFor="emailNotifications">Email Notifications</Label>
-                <p className="text-sm text-muted-foreground">Enable email notifications</p>
+                <p className="text-sm text-muted-foreground">Enable email notifications (welcome emails, etc.)</p>
               </div>
               <input
                 id="emailNotifications"
                 type="checkbox"
                 checked={settings.emailNotifications}
                 onChange={(e) => setSettings({ ...settings, emailNotifications: e.target.checked })}
-                className="size-5"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="smsNotifications">SMS Notifications</Label>
-                <p className="text-sm text-muted-foreground">Enable SMS notifications</p>
-              </div>
-              <input
-                id="smsNotifications"
-                type="checkbox"
-                checked={settings.smsNotifications}
-                onChange={(e) => setSettings({ ...settings, smsNotifications: e.target.checked })}
                 className="size-5"
               />
             </div>

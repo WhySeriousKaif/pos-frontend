@@ -332,8 +332,8 @@ const SuperAdminSalesPage = () => {
     <div className="h-full overflow-auto p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">System-Wide Sales</h1>
-          <p className="text-muted-foreground mt-1">View sales across all stores</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">System-Wide Sales</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">View sales across all stores</p>
         </div>
         <Button variant="outline" onClick={handleExport}>
           <Download className="size-4 mr-2" />

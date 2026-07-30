@@ -93,8 +93,21 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4 transition-colors">
+      <div className="w-full max-w-md">
+        <div
+          onClick={() => navigate('/')}
+          className="flex items-center justify-center gap-3 mb-8 cursor-pointer group"
+        >
+          <div className="w-11 h-11 rounded-xl bg-black flex items-center justify-center shadow-xl group-hover:scale-105 transition-all overflow-hidden border border-blue-900/40">
+            <img src="/bilix_logo.png" alt="Bilix" className="w-full h-full object-cover" />
+          </div>
+          <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            Bilix
+          </span>
+        </div>
+
+      <Card className="w-full">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-3xl font-bold">Login</CardTitle>
           <CardDescription>
@@ -172,6 +185,7 @@ const Login = () => {
           </form>
         </CardContent>
       </Card>
+      </div>
     </div>
   )
 }

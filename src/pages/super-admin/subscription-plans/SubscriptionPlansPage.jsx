@@ -11,102 +11,91 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Plus, Edit, Trash2, RefreshCw, Check, X } from 'lucide-react'
-// Format currency utility
+import { Plus, Edit, Trash2, RefreshCw, Check } from 'lucide-react'
+import { subscriptionPlanAPI } from '@/services/api'
+
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(amount)
+  }).format(amount || 0)
 }
 
+const emptyForm = {
+  name: '',
+  price: '',
+  branches: '',
+  users: '',
+  products: '',
+  features: '',
+  isActive: true,
+}
+
+// Map a plan returned from the backend (maxBranches/maxUsers/maxProducts/active) into
+// the shape this page's UI already works with (branches/users/products/isActive/features array)
+const fromDto = (plan) => ({
+  id: plan.id,
+  name: plan.name,
+  price: plan.price,
+  branches: plan.maxBranches || 0,
+  users: plan.maxUsers || 0,
+  products: plan.maxProducts || 0,
+  features: (plan.features || '').split(',').map((f) => f.trim()).filter(Boolean),
+  isActive: plan.active,
+})
+
+const toDto = (form) => ({
+  name: form.name,
+  price: parseFloat(form.price) || 0,
+  maxBranches: parseInt(form.branches) || 0,
+  maxUsers: parseInt(form.users) || 0,
+  maxProducts: parseInt(form.products) || 0,
+  features: form.features,
+  active: form.isActive,
+})
+
 const SubscriptionPlansPage = () => {
-  const [plans, setPlans] = useState([
-    {
-      id: 1,
-      name: 'Basic Plan',
-      price: 1299,
-      branches: 10,
-      users: 50,
-      products: 1000,
-      features: ['API integrations', 'Advanced reporting', 'Email support'],
-      isActive: true,
-    },
-    {
-      id: 2,
-      name: 'Pro Plan',
-      price: 2999,
-      branches: 100,
-      users: 500,
-      products: 9000,
-      features: ['API integrations', 'Advanced reporting', 'Shift management', 'Priority support'],
-      isActive: true,
-    },
-    {
-      id: 3,
-      name: 'Advance Plan',
-      price: 4999,
-      branches: 400,
-      users: 5000,
-      products: 50000,
-      features: ['All Pro features', 'Custom integrations', 'Dedicated support', 'Custom branding'],
-      isActive: true,
-    },
-  ])
+  const [plans, setPlans] = useState([])
+  const [loading, setLoading] = useState(true)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState(null)
-  const [newPlan, setNewPlan] = useState({
-    name: '',
-    price: '',
-    branches: '',
-    users: '',
-    products: '',
-    features: '',
-    isActive: true,
-  })
-  const [editPlan, setEditPlan] = useState({
-    name: '',
-    price: '',
-    branches: '',
-    users: '',
-    products: '',
-    features: '',
-    isActive: true,
-  })
+  const [newPlan, setNewPlan] = useState(emptyForm)
+  const [editPlan, setEditPlan] = useState(emptyForm)
 
-  const handleAddPlan = () => {
+  useEffect(() => {
+    fetchPlans()
+  }, [])
+
+  const fetchPlans = async () => {
+    try {
+      setLoading(true)
+      const data = await subscriptionPlanAPI.getAll()
+      setPlans((data || []).map(fromDto))
+    } catch (error) {
+      console.error('Error fetching subscription plans:', error)
+      setPlans([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAddPlan = async () => {
     if (!newPlan.name || !newPlan.price) {
       alert('Please fill in all required fields')
       return
     }
-
-    const features = newPlan.features.split(',').map(f => f.trim()).filter(f => f)
-    const plan = {
-      id: plans.length + 1,
-      name: newPlan.name,
-      price: parseFloat(newPlan.price),
-      branches: parseInt(newPlan.branches) || 0,
-      users: parseInt(newPlan.users) || 0,
-      products: parseInt(newPlan.products) || 0,
-      features,
-      isActive: newPlan.isActive,
+    try {
+      await subscriptionPlanAPI.create(toDto(newPlan))
+      await fetchPlans()
+      setIsAddDialogOpen(false)
+      setNewPlan(emptyForm)
+    } catch (error) {
+      console.error('Error creating plan:', error)
+      alert('Failed to create plan')
     }
-
-    setPlans([...plans, plan])
-    setIsAddDialogOpen(false)
-    setNewPlan({
-      name: '',
-      price: '',
-      branches: '',
-      users: '',
-      products: '',
-      features: '',
-      isActive: true,
-    })
-    alert('Plan added successfully! (Backend API to be implemented)')
   }
 
   const handleEdit = (plan) => {
@@ -123,46 +112,39 @@ const SubscriptionPlansPage = () => {
     setIsEditDialogOpen(true)
   }
 
-  const handleUpdatePlan = () => {
+  const handleUpdatePlan = async () => {
     if (!editPlan.name || !editPlan.price) {
       alert('Please fill in all required fields')
       return
     }
-
-    const features = editPlan.features.split(',').map(f => f.trim()).filter(f => f)
-    const updatedPlans = plans.map(plan =>
-      plan.id === selectedPlan.id
-        ? {
-            ...plan,
-            name: editPlan.name,
-            price: parseFloat(editPlan.price),
-            branches: parseInt(editPlan.branches) || 0,
-            users: parseInt(editPlan.users) || 0,
-            products: parseInt(editPlan.products) || 0,
-            features,
-            isActive: editPlan.isActive,
-          }
-        : plan
-    )
-
-    setPlans(updatedPlans)
-    setIsEditDialogOpen(false)
-    setSelectedPlan(null)
-    alert('Plan updated successfully! (Backend API to be implemented)')
+    try {
+      await subscriptionPlanAPI.update(selectedPlan.id, toDto(editPlan))
+      await fetchPlans()
+      setIsEditDialogOpen(false)
+      setSelectedPlan(null)
+    } catch (error) {
+      console.error('Error updating plan:', error)
+      alert('Failed to update plan')
+    }
   }
 
-  const handleDeletePlan = (id) => {
+  const handleDeletePlan = async (id) => {
     if (!confirm('Are you sure you want to delete this plan?')) return
-    setPlans(plans.filter(plan => plan.id !== id))
-    alert('Plan deleted successfully! (Backend API to be implemented)')
+    try {
+      await subscriptionPlanAPI.delete(id)
+      await fetchPlans()
+    } catch (error) {
+      console.error('Error deleting plan:', error)
+      alert('Failed to delete plan')
+    }
   }
 
   return (
     <div className="h-full overflow-auto p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Subscription Plans</h1>
-          <p className="text-muted-foreground mt-1">Manage subscription plans for stores</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">Subscription Plans</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Manage subscription plans for stores</p>
         </div>
         <Button onClick={() => setIsAddDialogOpen(true)}>
           <Plus className="size-4 mr-2" />
@@ -170,138 +152,146 @@ const SubscriptionPlansPage = () => {
         </Button>
       </div>
 
-      {/* Plans Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        {plans.map((plan) => (
-          <Card key={plan.id} className={plan.isActive ? 'border-2 border-primary' : ''}>
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <RefreshCw className="size-8 animate-spin text-blue-600" />
+        </div>
+      ) : (
+        <>
+          {/* Plans Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            {plans.map((plan) => (
+              <Card key={plan.id} className={plan.isActive ? 'border-2 border-blue-500' : ''}>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>{plan.name}</CardTitle>
+                    {plan.isActive && (
+                      <span className="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-400">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-2">
+                    <span className="text-3xl font-bold">{formatCurrency(plan.price)}</span>
+                    <span className="text-muted-foreground">/month</span>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 mb-4">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Branches:</span>
+                      <span className="font-medium">{plan.branches}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Users:</span>
+                      <span className="font-medium">{plan.users}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Products:</span>
+                      <span className="font-medium">{plan.products.toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div className="border-t pt-4 mb-4">
+                    <p className="text-sm font-medium mb-2">Features:</p>
+                    <ul className="space-y-1">
+                      {plan.features.map((feature, idx) => (
+                        <li key={idx} className="flex items-center gap-2 text-sm">
+                          <Check className="size-4 text-blue-600" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleEdit(plan)}
+                    >
+                      <Edit className="size-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeletePlan(plan.id)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Plans Table */}
+          <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>{plan.name}</CardTitle>
-                {plan.isActive && (
-                  <span className="px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
-                    Active
-                  </span>
-                )}
-              </div>
-              <div className="mt-2">
-                <span className="text-3xl font-bold">{formatCurrency(plan.price)}</span>
-                <span className="text-muted-foreground">/month</span>
-              </div>
+              <CardTitle>All Plans ({plans.length})</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Branches:</span>
-                  <span className="font-medium">{plan.branches}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Users:</span>
-                  <span className="font-medium">{plan.users}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Products:</span>
-                  <span className="font-medium">{plan.products.toLocaleString()}</span>
-                </div>
-              </div>
-              <div className="border-t pt-4 mb-4">
-                <p className="text-sm font-medium mb-2">Features:</p>
-                <ul className="space-y-1">
-                  {plan.features.map((feature, idx) => (
-                    <li key={idx} className="flex items-center gap-2 text-sm">
-                      <Check className="size-4 text-green-600" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleEdit(plan)}
-                >
-                  <Edit className="size-4 mr-2" />
-                  Edit
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleDeletePlan(plan.id)}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Plan Name</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Branches</TableHead>
+                      <TableHead>Users</TableHead>
+                      <TableHead>Products</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {plans.map((plan) => (
+                      <TableRow key={plan.id}>
+                        <TableCell className="font-medium">{plan.name}</TableCell>
+                        <TableCell>{formatCurrency(plan.price)}/month</TableCell>
+                        <TableCell>{plan.branches}</TableCell>
+                        <TableCell>{plan.users}</TableCell>
+                        <TableCell>{plan.products.toLocaleString()}</TableCell>
+                        <TableCell>
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium ${
+                              plan.isActive
+                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-400'
+                                : 'bg-gray-100 text-gray-800 dark:bg-white/5 dark:text-slate-400'
+                            }`}
+                          >
+                            {plan.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleEdit(plan)}
+                            >
+                              <Edit className="size-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                              onClick={() => handleDeletePlan(plan.id)}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
-
-      {/* Plans Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Plans ({plans.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Plan Name</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Branches</TableHead>
-                  <TableHead>Users</TableHead>
-                  <TableHead>Products</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {plans.map((plan) => (
-                  <TableRow key={plan.id}>
-                    <TableCell className="font-medium">{plan.name}</TableCell>
-                    <TableCell>{formatCurrency(plan.price)}/month</TableCell>
-                    <TableCell>{plan.branches}</TableCell>
-                    <TableCell>{plan.users}</TableCell>
-                    <TableCell>{plan.products.toLocaleString()}</TableCell>
-                    <TableCell>
-                      <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
-                          plan.isActive
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        {plan.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                          onClick={() => handleEdit(plan)}
-                        >
-                          <Edit className="size-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                          onClick={() => handleDeletePlan(plan.id)}
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+        </>
+      )}
 
       {/* Add Plan Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -495,4 +485,3 @@ const SubscriptionPlansPage = () => {
 }
 
 export default SubscriptionPlansPage
-

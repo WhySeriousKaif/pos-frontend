@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Search, RefreshCw, Check, X, Eye, Store, MapPin, Phone, Mail } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Search, RefreshCw, Check, X, Eye, Store, MapPin, Phone, Mail, Hash, Calendar, Tag, FileText } from 'lucide-react'
 import { format } from 'date-fns'
 import { storeAPI } from '@/services/api'
 
@@ -12,6 +13,7 @@ const StoresPage = () => {
   const [filteredStores, setFilteredStores] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedStore, setSelectedStore] = useState(null)
 
   useEffect(() => {
     fetchStores()
@@ -63,9 +65,9 @@ const StoresPage = () => {
 
   const getStatusColor = (status) => {
     const colorMap = {
-      PENDING: 'bg-yellow-100 text-yellow-800',
-      ACTIVE: 'bg-green-100 text-green-800',
-      BLOCKED: 'bg-red-100 text-red-800',
+      PENDING: 'bg-amber-100 text-amber-800 dark:bg-amber-500/10 dark:text-amber-400',
+      ACTIVE: 'bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-400',
+      BLOCKED: 'bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-400',
     }
     return colorMap[status] || 'bg-gray-100 text-gray-800'
   }
@@ -83,8 +85,8 @@ const StoresPage = () => {
     <div className="h-full overflow-auto p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Stores</h1>
-          <p className="text-muted-foreground mt-1">Manage all stores in the system</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">Stores</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Manage all stores in the system</p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchStores}>
           <RefreshCw className="size-4 mr-2" />
@@ -240,11 +242,7 @@ const StoresPage = () => {
                             variant="ghost"
                             size="sm"
                             className="h-8 w-8 p-0"
-                            onClick={() => {
-                              // View store details
-                              const details = `Store Details\n\nID: ${store.id}\nBrand: ${store.brand || 'N/A'}\nType: ${store.storeType || 'N/A'}\nStatus: ${getStatusLabel(store.storeStatus)}\nDescription: ${store.description || 'N/A'}\n\nContact:\nEmail: ${store.contact?.email || 'N/A'}\nPhone: ${store.contact?.phone || 'N/A'}\nAddress: ${store.contact?.address || 'N/A'}\n\nCreated: ${store.createdAt ? format(new Date(store.createdAt), 'MMM d, yyyy') : 'N/A'}`
-                              alert(details)
-                            }}
+                            onClick={() => setSelectedStore(store)}
                             title="View Store Details"
                           >
                             <Eye className="size-4" />
@@ -259,6 +257,107 @@ const StoresPage = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Store Details Dialog */}
+      <Dialog open={!!selectedStore} onOpenChange={(open) => !open && setSelectedStore(null)}>
+        <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+          {selectedStore && (
+            <>
+              <div className="bg-gradient-to-br from-blue-600 to-blue-800 px-6 py-6 text-white">
+                <DialogHeader>
+                  <div className="flex items-start gap-4">
+                    <div className="h-14 w-14 shrink-0 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center ring-1 ring-white/20">
+                      <Store className="size-7" />
+                    </div>
+                    <div className="min-w-0 pt-0.5">
+                      <DialogTitle className="text-xl font-black text-white leading-tight truncate">
+                        {selectedStore.brand || 'N/A'}
+                      </DialogTitle>
+                      <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                            selectedStore.storeStatus === 'ACTIVE'
+                              ? 'bg-blue-400/25 text-blue-50'
+                              : selectedStore.storeStatus === 'PENDING'
+                              ? 'bg-amber-400/25 text-amber-50'
+                              : 'bg-red-400/25 text-red-50'
+                          }`}
+                        >
+                          {getStatusLabel(selectedStore.storeStatus)}
+                        </span>
+                        <span className="flex items-center gap-1 text-xs text-blue-100/80">
+                          <Hash className="size-3" />
+                          {selectedStore.id}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </DialogHeader>
+              </div>
+
+              <div className="px-6 py-5 space-y-5">
+                {selectedStore.description && (
+                  <div className="flex items-start gap-3">
+                    <FileText className="size-4 text-blue-500 mt-0.5 shrink-0" />
+                    <p className="text-sm text-slate-600 dark:text-slate-300">{selectedStore.description}</p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1 flex items-center gap-1.5">
+                      <Tag className="size-3.5" /> Type
+                    </div>
+                    <div className="text-sm font-medium text-slate-900 dark:text-white">
+                      {selectedStore.storeType || 'N/A'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1 flex items-center gap-1.5">
+                      <Calendar className="size-3.5" /> Created
+                    </div>
+                    <div className="text-sm font-medium text-slate-900 dark:text-white">
+                      {selectedStore.createdAt ? format(new Date(selectedStore.createdAt), 'MMM d, yyyy') : 'N/A'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-100 dark:border-white/10 pt-4">
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2.5">
+                    Contact
+                  </div>
+                  <div className="space-y-2.5">
+                    <div className="flex items-center gap-3 text-sm">
+                      <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
+                        <Mail className="size-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <span className="text-slate-700 dark:text-slate-200 truncate">
+                        {selectedStore.contact?.email || 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm">
+                      <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
+                        <Phone className="size-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <span className="text-slate-700 dark:text-slate-200">
+                        {selectedStore.contact?.phone || 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm">
+                      <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0">
+                        <MapPin className="size-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <span className="text-slate-700 dark:text-slate-200">
+                        {selectedStore.contact?.address || 'N/A'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

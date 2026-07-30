@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import Navbar from '@/components/layout/Navbar'
 import { Carousel, Card as AppleCard } from '@/components/ui/apple-cards-carousel'
 import { CometCard } from '@/components/ui/comet-card'
 import { InfiniteMovingCards } from '@/components/ui/infinite-moving-cards'
@@ -18,34 +19,34 @@ import {
   FileText,
   ArrowRight,
   Play,
-  Menu,
-  X,
   Star,
   Sparkles,
   Plus,
-  Sun,
-  Moon,
 } from 'lucide-react'
-import { useTheme } from '@/contexts/ThemeContext'
 import logoP from '@/assets/logo_p_transparent.png'
+import { testimonials } from '@/data/testimonials'
+import { subscriptionPlanAPI } from '@/services/api'
 
 const LandingPage = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
   const [openFaqIndex, setOpenFaqIndex] = useState(-1)
+  const [pricingPlans, setPricingPlans] = useState([])
   const navigate = useNavigate()
-  const { darkMode, toggleTheme } = useTheme()
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 30) {
-        setScrolled(true)
-      } else {
-        setScrolled(false)
-      }
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+    subscriptionPlanAPI.getAll()
+      .then((plans) => {
+        const active = (plans || []).filter((p) => p.active).sort((a, b) => a.price - b.price)
+        setPricingPlans(
+          active.map((plan, index) => ({
+            name: plan.name,
+            price: `$${plan.price.toLocaleString()}`,
+            period: '/month',
+            popular: index === 1 || (active.length === 1 && index === 0),
+            features: (plan.features || '').split(',').map((f) => f.trim()).filter(Boolean),
+          }))
+        )
+      })
+      .catch((error) => console.error('Error fetching pricing plans:', error))
   }, [])
 
   const features = [
@@ -68,45 +69,6 @@ const LandingPage = () => {
       icon: CheckCircle2,
       title: 'GST Ready',
       description: 'Compliant with tax regulations and reporting',
-    },
-  ]
-
-  const testimonials = [
-    {
-      name: 'John Smith',
-      role: 'Store Manager',
-      company: 'Retail Chain Inc.',
-      content: 'This POS system has transformed our operations. The real-time analytics help us make better decisions.',
-    },
-    {
-      name: 'Sarah Johnson',
-      role: 'Operations Director',
-      company: 'Supermarket Group',
-      content: 'The multi-store management feature is a game-changer. We can now manage all our locations from one dashboard.',
-    },
-    {
-      name: 'Michael Chen',
-      role: 'CEO',
-      company: 'Mall Corporation',
-      content: 'Best investment we made. The system pays for itself with the efficiency gains.',
-    },
-    {
-      name: 'Priya Nair',
-      role: 'Owner',
-      company: 'Nair Fresh Mart',
-      content: 'Billing that used to take a minute now takes seconds. Our checkout queues have basically disappeared.',
-    },
-    {
-      name: 'David Alvarez',
-      role: 'Regional Manager',
-      company: 'Alvarez Grocers',
-      content: 'Onboarding across 12 branches took a single afternoon. Support was fast whenever we got stuck.',
-    },
-    {
-      name: 'Fatima Rahman',
-      role: 'Finance Head',
-      company: 'Rahman Retail Group',
-      content: 'GST-ready reporting alone saved our accounting team hours every single week.',
     },
   ]
 
@@ -148,113 +110,7 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFE] dark:bg-[#0F1729] text-slate-900 dark:text-slate-100 selection:bg-blue-800 selection:text-white transition-colors">
-      {/* Animated Navbar: Wide Rounded Pill at Top -> Morphing to Compact Glass Pill on Scroll */}
-      <div className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out px-4 sm:px-6 lg:px-8 ${
-        scrolled ? 'pt-3' : 'pt-4'
-      }`}>
-        <header className={`mx-auto flex items-center justify-between transition-all duration-500 ease-in-out border rounded-full ${
-          scrolled
-            ? 'max-w-5xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border-black/10 dark:border-white/15 shadow-2xl py-2.5 px-6'
-            : 'max-w-7xl bg-white/10 dark:bg-black/15 backdrop-blur-sm border-black/10 dark:border-white/20 shadow-md py-3.5 px-8'
-        }`}>
-          {/* Logo / Brand Name: Bilix — 3D Blue B Logo */}
-          <div
-            onClick={() => navigate('/')}
-            className="flex items-center gap-3 cursor-pointer group"
-          >
-            <div className="w-11 h-11 rounded-xl bg-black flex items-center justify-center shadow-xl group-hover:scale-105 transition-all overflow-hidden border border-blue-900/40">
-              <img src="/bilix_logo.png" alt="Bilix" className="w-full h-full object-cover" />
-            </div>
-            <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-              Bilix
-            </span>
-          </div>
-
-          {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-8 font-semibold text-sm text-slate-800 dark:text-white">
-            <a href="#features" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              Features
-            </a>
-            <a href="#pricing" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              Pricing
-            </a>
-            <a href="#why-us" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              Why Us
-            </a>
-            <a href="#testimonials" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              Testimonials
-            </a>
-            <a href="#faq" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-              FAQ
-            </a>
-          </nav>
-
-          {/* Right Action Buttons */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={toggleTheme}
-              aria-label="Toggle theme"
-              className="p-2.5 rounded-full text-slate-800 dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
-            >
-              {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </button>
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/auth/login')}
-              className="hidden sm:flex font-semibold text-slate-800 dark:text-white hover:text-slate-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 rounded-full px-5 text-sm"
-            >
-              Sign In
-            </Button>
-            <Button
-              onClick={() => navigate('/auth/register')}
-              className="bg-blue-800 hover:bg-blue-700 text-white rounded-full font-bold text-xs sm:text-sm tracking-wider uppercase px-6 py-2.5 shadow-xl shadow-blue-800/30 hover:scale-105 transition-all"
-            >
-              GET FREE DEMO
-            </Button>
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-slate-800 dark:text-white"
-            >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
-        </header>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden mt-2 max-w-6xl mx-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-black/10 dark:border-white/10 rounded-2xl shadow-xl p-4 space-y-3 text-slate-800 dark:text-slate-200 font-medium">
-            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block py-2 hover:text-blue-500 dark:hover:text-blue-400">Features</a>
-            <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block py-2 hover:text-blue-500 dark:hover:text-blue-400">Pricing</a>
-            <a href="#why-us" onClick={() => setMobileMenuOpen(false)} className="block py-2 hover:text-blue-500 dark:hover:text-blue-400">Why Us</a>
-            <a href="#testimonials" onClick={() => setMobileMenuOpen(false)} className="block py-2 hover:text-blue-500 dark:hover:text-blue-400">Testimonials</a>
-            <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block py-2 hover:text-blue-500 dark:hover:text-blue-400">FAQ</a>
-            <div className="pt-3 border-t border-black/10 dark:border-white/10 flex items-center justify-between gap-2">
-              <button
-                onClick={toggleTheme}
-                aria-label="Toggle theme"
-                className="p-2.5 rounded-full border border-black/10 dark:border-white/15 text-slate-700 dark:text-slate-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
-              >
-                {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </button>
-              <div className="flex flex-1 gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => { setMobileMenuOpen(false); navigate('/auth/login'); }}
-                  className="flex-1 rounded-full border-black/15 dark:border-white/20 text-slate-800 dark:text-white hover:bg-black/5 dark:hover:bg-white/10"
-                >
-                  Sign In
-                </Button>
-                <Button
-                  onClick={() => { setMobileMenuOpen(false); navigate('/auth/register'); }}
-                  className="flex-1 bg-blue-800 hover:bg-blue-700 text-white rounded-full"
-                >
-                  GET FREE DEMO
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      <Navbar />
 
       {/* Hero Section with Full-Screen Video Background - Fill Entire Window (100vh) */}
       <section className="relative h-screen w-full flex flex-col justify-center overflow-hidden bg-[#F8FAFE] dark:bg-black text-slate-900 dark:text-white transition-colors">
@@ -270,7 +126,7 @@ const LandingPage = () => {
             className="w-full h-full object-cover"
           />
           {/* Text Readability Shadow - just a light tint in light mode (video stays visible), dark scrim in dark mode */}
-          <div className="absolute inset-0 bg-gradient-to-r from-white/60 via-white/25 to-transparent dark:from-black/75 dark:via-black/25 dark:to-transparent pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-white/40 via-white/10 to-transparent dark:from-black/75 dark:via-black/25 dark:to-transparent pointer-events-none"></div>
         </div>
 
         {/* Hero Content - Left Aligned */}
@@ -282,7 +138,7 @@ const LandingPage = () => {
           </h1>
 
           {/* Subtitle */}
-          <p className="text-base sm:text-lg text-slate-700 dark:text-slate-100 max-w-xl leading-relaxed font-normal drop-shadow-md">
+          <p className="text-base sm:text-lg text-slate-900 dark:text-slate-100 max-w-xl leading-relaxed font-medium [text-shadow:0_1px_16px_rgb(255_255_255_/_85%),0_1px_4px_rgb(255_255_255_/_90%)] dark:[text-shadow:0_1px_12px_rgb(0_0_0_/_70%)]">
             Run your retail store, supermarket, or mall effortlessly by streamlining every aspect of your business — from instant checkouts to multi-store inventory.
           </p>
 
@@ -305,7 +161,11 @@ const LandingPage = () => {
       </section>
 
       {/* Benefits Section — Pure Light Off-White Theme Carousel (#FAFAFD) */}
-      <section id="features" className="py-24 bg-[#F6F8FD] dark:bg-[#0F1729] text-slate-900 dark:text-white relative overflow-hidden transition-colors border-t border-slate-200/60">
+      <section id="features" className="py-24 bg-[#FAFAFD] dark:bg-slate-900 text-slate-900 dark:text-white relative overflow-hidden transition-colors border-t border-slate-200/60">
+        <div
+          className="absolute inset-0 z-0 pointer-events-none opacity-[0.08]"
+          style={{ backgroundImage: "url('/bilix_b_logo.webp')", backgroundSize: "cover", backgroundPosition: "center" }}
+        />
         <div className="max-w-4xl mx-auto px-4 text-center mb-6 relative z-10">
           <span className="inline-block text-xs font-extrabold uppercase tracking-widest text-blue-800 bg-blue-100/90 border border-blue-200 px-4 py-1.5 rounded-full mb-4 shadow-sm">
             EXPLORE POS BENEFITS
@@ -544,29 +404,7 @@ const LandingPage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                name: 'Starter',
-                price: '$29',
-                period: '/month',
-                popular: false,
-                features: ['1 Store Location', 'Up to 3 Users', 'Basic Analytics', 'Standard Support'],
-              },
-              {
-                name: 'Professional',
-                price: '$79',
-                period: '/month',
-                popular: true,
-                features: ['Up to 5 Store Locations', 'Unlimited Users', 'Advanced Analytics', '24/7 Priority Support', 'Custom Reports'],
-              },
-              {
-                name: 'Enterprise',
-                price: 'Custom',
-                period: '',
-                popular: false,
-                features: ['Unlimited Locations', 'Unlimited Users', 'Dedicated Account Manager', 'Custom Integrations', 'SLA Guarantee'],
-              },
-            ].map((plan, index) => (
+            {pricingPlans.map((plan) => (
               <CometCard key={plan.name}>
                 <div className="relative h-full rounded-2xl border border-black/10 dark:border-white/10 p-2">
                   <GlowingEffect
