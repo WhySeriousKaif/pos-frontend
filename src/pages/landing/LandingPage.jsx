@@ -1,7 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Carousel, Card as AppleCard } from '@/components/ui/apple-cards-carousel'
+import { CometCard } from '@/components/ui/comet-card'
+import { InfiniteMovingCards } from '@/components/ui/infinite-moving-cards'
+import { GlowingEffect } from '@/components/ui/glowing-effect'
 import {
   ShoppingCart,
   BarChart3,
@@ -17,21 +20,33 @@ import {
   Play,
   Menu,
   X,
-  ChevronDown,
+  Star,
+  Sparkles,
+  Plus,
   Sun,
   Moon,
 } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import logoP from '@/assets/logo_p_transparent.png'
-import videoKaif from '@/assets/videoKaif.mp4'
-import video2 from '@/assets/video 2.mp4'
 
 const LandingPage = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [featuresOpen, setFeaturesOpen] = useState(false)
-  const [resourcesOpen, setResourcesOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const [openFaqIndex, setOpenFaqIndex] = useState(-1)
   const navigate = useNavigate()
   const { darkMode, toggleTheme } = useTheme()
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 30) {
+        setScrolled(true)
+      } else {
+        setScrolled(false)
+      }
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const features = [
     {
@@ -56,76 +71,75 @@ const LandingPage = () => {
     },
   ]
 
-  const pricingPlans = [
-    {
-      name: 'Basic Plan',
-      price: '$1,299',
-      period: '/month',
-      features: [
-        'Up to 10 branches',
-        'Up to 50 users',
-        'Up to 1,000 products',
-        'API integrations',
-        'Advanced reporting',
-        'Email support',
-      ],
-      popular: false,
-    },
-    {
-      name: 'Pro Plan',
-      price: '$2,999',
-      period: '/month',
-      features: [
-        'Up to 100 branches',
-        'Up to 500 users',
-        'Up to 9,000 products',
-        'Shift management',
-        'Priority support',
-        'All Basic features',
-      ],
-      popular: true,
-    },
-    {
-      name: 'Advance Plan',
-      price: '$4,999',
-      period: '/month',
-      features: [
-        'Up to 400 branches',
-        'Up to 5,000 users',
-        'Up to 50,000 products',
-        'Custom integrations',
-        'Dedicated support',
-        'All Pro features',
-      ],
-      popular: false,
-    },
-  ]
-
   const testimonials = [
     {
       name: 'John Smith',
       role: 'Store Manager',
       company: 'Retail Chain Inc.',
       content: 'This POS system has transformed our operations. The real-time analytics help us make better decisions.',
-      rating: 5,
     },
     {
       name: 'Sarah Johnson',
       role: 'Operations Director',
       company: 'Supermarket Group',
       content: 'The multi-store management feature is a game-changer. We can now manage all our locations from one dashboard.',
-      rating: 5,
     },
     {
       name: 'Michael Chen',
       role: 'CEO',
       company: 'Mall Corporation',
       content: 'Best investment we made. The system pays for itself with the efficiency gains.',
-      rating: 5,
+    },
+    {
+      name: 'Priya Nair',
+      role: 'Owner',
+      company: 'Nair Fresh Mart',
+      content: 'Billing that used to take a minute now takes seconds. Our checkout queues have basically disappeared.',
+    },
+    {
+      name: 'David Alvarez',
+      role: 'Regional Manager',
+      company: 'Alvarez Grocers',
+      content: 'Onboarding across 12 branches took a single afternoon. Support was fast whenever we got stuck.',
+    },
+    {
+      name: 'Fatima Rahman',
+      role: 'Finance Head',
+      company: 'Rahman Retail Group',
+      content: 'GST-ready reporting alone saved our accounting team hours every single week.',
     },
   ]
 
-  const videos = [videoKaif, video2]
+  const faqs = [
+    {
+      category: 'HOW IT WORKS',
+      question: 'Okay, how does Bilix actually work?',
+      answer: "Install Bilix on your billing counter, add your products once, and you're scanning and charging customers within the hour. Inventory, receipts, and reports update in real time across every connected device.",
+    },
+    {
+      category: 'SPEED',
+      question: 'How fast is checkout, really?',
+      answer: 'Barcode scans register in under a second and payments settle instantly over UPI, card, or cash. Most stores cut their average checkout time by more than half in the first week.',
+    },
+    {
+      category: 'SCALE',
+      question: 'Can it handle more than one store?',
+      answer: 'Yes — Bilix is built for chains. Manage pricing, stock transfers, and staff across every branch from one dashboard, whether you run 2 stores or 200.',
+    },
+    {
+      category: 'OFFLINE',
+      question: 'What happens if the internet drops?',
+      answer: 'Nothing stops. Bilix keeps billing locally on the terminal and automatically syncs every transaction to the cloud the moment connection is restored — no lost sales, no manual reconciliation.',
+    },
+    {
+      category: 'ONBOARDING',
+      question: 'What if my team has never used a POS before?',
+      answer: "The interface is built to be learned in minutes, not days, and every plan includes onboarding support. Most cashiers are comfortable running the counter solo on day one.",
+    },
+  ]
+
+  // Public video files loop including 21117-315137086_large.mp4
+  const videos = ['/zs-supermarket-bg.mp4', '/videoKaif.mp4', '/21117-315137086_large.mp4']
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0)
 
   const handleVideoEnded = () => {
@@ -133,187 +147,119 @@ const LandingPage = () => {
   }
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'dark bg-gray-900' : 'bg-white'}`}>
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-white dark:bg-gray-900 backdrop-blur-sm">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <div className="flex items-center gap-2">
-              <img src={logoP} alt="POS Pro" className="h-10 w-10 object-contain rounded-full" />
-              <span className="text-xl font-bold text-gray-900 dark:text-white">POS Pro</span>
+    <div className="min-h-screen bg-[#F8FAFE] dark:bg-[#0F1729] text-slate-900 dark:text-slate-100 selection:bg-blue-800 selection:text-white transition-colors">
+      {/* Animated Navbar: Wide Rounded Pill at Top -> Morphing to Compact Glass Pill on Scroll */}
+      <div className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out px-4 sm:px-6 lg:px-8 ${
+        scrolled ? 'pt-3' : 'pt-4'
+      }`}>
+        <header className={`mx-auto flex items-center justify-between transition-all duration-500 ease-in-out border rounded-full ${
+          scrolled
+            ? 'max-w-5xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border-black/10 dark:border-white/15 shadow-2xl py-2.5 px-6'
+            : 'max-w-7xl bg-white/10 dark:bg-black/15 backdrop-blur-sm border-black/10 dark:border-white/20 shadow-md py-3.5 px-8'
+        }`}>
+          {/* Logo / Brand Name: Bilix — 3D Blue B Logo */}
+          <div
+            onClick={() => navigate('/')}
+            className="flex items-center gap-3 cursor-pointer group"
+          >
+            <div className="w-11 h-11 rounded-xl bg-black flex items-center justify-center shadow-xl group-hover:scale-105 transition-all overflow-hidden border border-blue-900/40">
+              <img src="/bilix_logo.png" alt="Bilix" className="w-full h-full object-cover" />
             </div>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-6">
-              <div className="relative group">
-                <button className="flex items-center gap-1 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
-                  Features
-                  <ChevronDown className="h-4 w-4" />
-                </button>
-                <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                  <div className="p-2">
-                    <a href="#features" className="block px-4 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                      All Features
-                    </a>
-                    <a href="#pricing" className="block px-4 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                      Pricing
-                    </a>
-                  </div>
-                </div>
-              </div>
-              <a href="#pricing" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
-                Pricing
-              </a>
-              <a href="#testimonials" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
-                Testimonials
-              </a>
-              <div className="relative group">
-                <button className="flex items-center gap-1 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
-                  Resources
-                  <ChevronDown className="h-4 w-4" />
-                </button>
-                <div className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                  <div className="p-2">
-                    <a href="#" className="block px-4 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                      Documentation
-                    </a>
-                    <a href="#" className="block px-4 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
-                      API Reference
-                    </a>
-                  </div>
-                </div>
-              </div>
-              <a href="#contact" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
-                Contact
-              </a>
-            </nav>
-
-            {/* Right Side Actions */}
-            <div className="flex items-center gap-4">
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-                title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-              >
-                {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </button>
-              <Button
-                variant="ghost"
-                onClick={() => navigate('/auth/login')}
-                className="hidden sm:flex"
-              >
-                Sign In
-              </Button>
-              <Button
-                onClick={() => navigate('/auth/register')}
-                className="bg-blue-600 hover:bg-blue-700 text-white hidden sm:flex"
-              >
-                Request Demo
-              </Button>
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2"
-              >
-                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
-            </div>
+            <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              Bilix
+            </span>
           </div>
-        </div>
+
+          {/* Navigation Links */}
+          <nav className="hidden md:flex items-center gap-8 font-semibold text-sm text-slate-800 dark:text-white">
+            <a href="#features" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              Features
+            </a>
+            <a href="#pricing" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              Pricing
+            </a>
+            <a href="#why-us" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              Why Us
+            </a>
+            <a href="#testimonials" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              Testimonials
+            </a>
+            <a href="#faq" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+              FAQ
+            </a>
+          </nav>
+
+          {/* Right Action Buttons */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+              className="p-2.5 rounded-full text-slate-800 dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+            >
+              {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/auth/login')}
+              className="hidden sm:flex font-semibold text-slate-800 dark:text-white hover:text-slate-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 rounded-full px-5 text-sm"
+            >
+              Sign In
+            </Button>
+            <Button
+              onClick={() => navigate('/auth/register')}
+              className="bg-blue-800 hover:bg-blue-700 text-white rounded-full font-bold text-xs sm:text-sm tracking-wider uppercase px-6 py-2.5 shadow-xl shadow-blue-800/30 hover:scale-105 transition-all"
+            >
+              GET FREE DEMO
+            </Button>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 text-slate-800 dark:text-white"
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </div>
+        </header>
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t bg-white dark:bg-gray-900">
-            <div className="container mx-auto px-4 py-4 space-y-2">
-              <a href="#features" className="block py-2">Features</a>
-              <a href="#pricing" className="block py-2">Pricing</a>
-              <a href="#testimonials" className="block py-2">Testimonials</a>
-              <a href="#contact" className="block py-2">Contact</a>
-              <Button
-                variant="ghost"
-                onClick={() => navigate('/auth/login')}
-                className="w-full"
+          <div className="md:hidden mt-2 max-w-6xl mx-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-black/10 dark:border-white/10 rounded-2xl shadow-xl p-4 space-y-3 text-slate-800 dark:text-slate-200 font-medium">
+            <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block py-2 hover:text-blue-500 dark:hover:text-blue-400">Features</a>
+            <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="block py-2 hover:text-blue-500 dark:hover:text-blue-400">Pricing</a>
+            <a href="#why-us" onClick={() => setMobileMenuOpen(false)} className="block py-2 hover:text-blue-500 dark:hover:text-blue-400">Why Us</a>
+            <a href="#testimonials" onClick={() => setMobileMenuOpen(false)} className="block py-2 hover:text-blue-500 dark:hover:text-blue-400">Testimonials</a>
+            <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="block py-2 hover:text-blue-500 dark:hover:text-blue-400">FAQ</a>
+            <div className="pt-3 border-t border-black/10 dark:border-white/10 flex items-center justify-between gap-2">
+              <button
+                onClick={toggleTheme}
+                aria-label="Toggle theme"
+                className="p-2.5 rounded-full border border-black/10 dark:border-white/15 text-slate-700 dark:text-slate-200 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
               >
-                Sign In
-              </Button>
-              <Button
-                onClick={() => navigate('/auth/register')}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                Request Demo
-              </Button>
+                {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </button>
+              <div className="flex flex-1 gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => { setMobileMenuOpen(false); navigate('/auth/login'); }}
+                  className="flex-1 rounded-full border-black/15 dark:border-white/20 text-slate-800 dark:text-white hover:bg-black/5 dark:hover:bg-white/10"
+                >
+                  Sign In
+                </Button>
+                <Button
+                  onClick={() => { setMobileMenuOpen(false); navigate('/auth/register'); }}
+                  className="flex-1 bg-blue-800 hover:bg-blue-700 text-white rounded-full"
+                >
+                  GET FREE DEMO
+                </Button>
+              </div>
             </div>
           </div>
         )}
-      </header>
-
-      {/* New Feature Banner */}
-      <div className="bg-gray-100 dark:bg-gray-800 border-b">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex items-center justify-center">
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              🎉 New Feature: Multi-store Management Now Available
-            </span>
-          </div>
-        </div>
       </div>
 
-      {/* Hero Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800">
-        <div className="container mx-auto max-w-4xl text-center">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-            Powerful POS System For{' '}
-            <span className="text-blue-600 dark:text-blue-400">
-              Malls, Supermarkets & Retail Chains
-            </span>
-          </h1>
-          <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-            Manage billing, inventory, staff, and reports—all in one system. Streamline your
-            operations and boost your business growth.
-          </p>
-
-          {/* Feature Highlights */}
-          <div className="flex flex-wrap justify-center gap-3 mb-8">
-            {features.map((feature, index) => {
-              const Icon = feature.icon
-              return (
-                <div
-                  key={index}
-                  className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm"
-                >
-                  <Icon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {feature.title}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-8 py-6"
-              asChild
-            >
-              <Link to="/auth/register">
-                Get Started <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="text-lg px-8 py-6 border-2"
-            >
-              Watch Demo Video <Play className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Hero Video - Wide Layout */}
-        <div className="mt-16 relative w-full max-w-[98%] mx-auto">
-          <div className="absolute inset-0 bg-blue-600/5 blur-3xl rounded-full transform scale-150 opacity-50"></div>
+      {/* Hero Section with Full-Screen Video Background - Fill Entire Window (100vh) */}
+      <section className="relative h-screen w-full flex flex-col justify-center overflow-hidden bg-[#F8FAFE] dark:bg-black text-slate-900 dark:text-white transition-colors">
+        {/* Background Video Layer - 100% Untouched Original Video Colors */}
+        <div className="absolute inset-0 z-0">
           <video
             key={currentVideoIndex}
             src={videos[currentVideoIndex]}
@@ -321,204 +267,521 @@ const LandingPage = () => {
             muted
             playsInline
             onEnded={handleVideoEnded}
-            className="relative rounded-2xl shadow-2xl border-4 border-white dark:border-gray-800 w-full h-auto transform hover:scale-[1.005] transition-transform duration-500"
+            className="w-full h-full object-cover"
           />
+          {/* Text Readability Shadow - just a light tint in light mode (video stays visible), dark scrim in dark mode */}
+          <div className="absolute inset-0 bg-gradient-to-r from-white/60 via-white/25 to-transparent dark:from-black/75 dark:via-black/25 dark:to-transparent pointer-events-none"></div>
+        </div>
+
+        {/* Hero Content - Left Aligned */}
+        <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-12 w-full text-left space-y-6 pt-16">
+          {/* Main Headline */}
+          <h1 className="text-5xl sm:text-7xl lg:text-8xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-[1.05] max-w-3xl drop-shadow-lg">
+            Retail & Supermarket <br className="hidden sm:block" />
+            billing software
+          </h1>
+
+          {/* Subtitle */}
+          <p className="text-base sm:text-lg text-slate-700 dark:text-slate-100 max-w-xl leading-relaxed font-normal drop-shadow-md">
+            Run your retail store, supermarket, or mall effortlessly by streamlining every aspect of your business — from instant checkouts to multi-store inventory.
+          </p>
+
+          {/* Action CTA Buttons */}
+          <div className="flex flex-wrap items-center gap-4 pt-4">
+            <Button
+              onClick={() => navigate('/auth/register')}
+              className="bg-blue-800 hover:bg-blue-700 text-white font-extrabold text-xs sm:text-sm tracking-wider uppercase px-8 py-4 rounded-full shadow-2xl shadow-blue-800/40 hover:scale-105 transition-all"
+            >
+              GETTING STARTED
+            </Button>
+            <Button
+              onClick={() => navigate('/auth/login')}
+              className="bg-white/70 hover:bg-white text-slate-900 border border-black/10 dark:bg-black/70 dark:hover:bg-black dark:text-white dark:border-white/30 font-extrabold text-xs sm:text-sm tracking-wider uppercase px-8 py-4 rounded-full backdrop-blur-md hover:scale-105 transition-all"
+            >
+              REQUEST A DEMO
+            </Button>
+          </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-900">
-        <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              Everything You Need to Run Your Business
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Comprehensive features designed to streamline your operations and drive growth
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                icon: Store,
-                title: 'Multi-Store Management',
-                description: 'Manage unlimited stores and branches from a single dashboard',
-              },
-              {
-                icon: Users,
-                title: 'Employee Management',
-                description: 'Track staff, assign roles, and manage permissions easily',
-              },
-              {
-                icon: BarChart3,
-                title: 'Real-time Analytics',
-                description: 'Get instant insights with comprehensive reports and dashboards',
-              },
-              {
-                icon: ShoppingCart,
-                title: 'Fast Checkout',
-                description: 'Streamlined POS interface for quick and efficient transactions',
-              },
-              {
-                icon: TrendingUp,
-                title: 'Sales Tracking',
-                description: 'Monitor sales trends, top products, and revenue analytics',
-              },
-              {
-                icon: Shield,
-                title: 'Secure & Compliant',
-                description: 'Enterprise-grade security with GST and tax compliance built-in',
-              },
-              {
-                icon: Zap,
-                title: 'Inventory Management',
-                description: 'Track stock levels, set alerts, and manage product catalogs',
-              },
-              {
-                icon: FileText,
-                title: 'Reports & Exports',
-                description: 'Generate detailed reports and export data in multiple formats',
-              },
-              {
-                icon: CheckCircle2,
-                title: '24/7 Support',
-                description: 'Round-the-clock customer support to help you succeed',
-              },
-            ].map((feature, index) => {
-              const Icon = feature.icon
-              return (
-                <Card key={index} className="border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="h-12 w-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mb-4">
-                      <Icon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                      {feature.title}
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-300">{feature.description}</p>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
+      {/* Benefits Section — Pure Light Off-White Theme Carousel (#FAFAFD) */}
+      <section id="features" className="py-24 bg-[#F6F8FD] dark:bg-[#0F1729] text-slate-900 dark:text-white relative overflow-hidden transition-colors border-t border-slate-200/60">
+        <div className="max-w-4xl mx-auto px-4 text-center mb-6 relative z-10">
+          <span className="inline-block text-xs font-extrabold uppercase tracking-widest text-blue-800 bg-blue-100/90 border border-blue-200 px-4 py-1.5 rounded-full mb-4 shadow-sm">
+            EXPLORE POS BENEFITS
+          </span>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-[1.2] mb-4" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
+            Benefits of Bilix as your
+            <br /><em>supermarket billing POS</em>
+          </h2>
+          <p className="text-slate-600 dark:text-slate-300 text-base md:text-lg max-w-2xl mx-auto font-medium leading-relaxed">
+            Everything you need to streamline checkouts, eliminate queues, and manage your supermarket or retail stores efficiently.
+          </p>
         </div>
+
+        <Carousel
+          items={[
+            {
+              category: "SMART INVENTORY",
+              title: "Never run out. Stock alerts fire before shelves go empty.",
+              src: "/zs-supermarket-benefits-image-2-2x.webp",
+              content: (
+                <div className="space-y-4">
+                  <p className="text-slate-700 dark:text-slate-300 text-base md:text-lg leading-relaxed">
+                    Bilix POS continuously monitors inventory across all product categories in real time. Receive automated reorder notifications before high-demand items run out, track expiry dates for fresh produce, and run instant barcode stock audits.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                      <h5 className="font-bold text-slate-900 dark:text-white text-base mb-1">Automated Reorder Triggers</h5>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Set min/max threshold triggers to automatically generate purchase orders for suppliers.</p>
+                    </div>
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                      <h5 className="font-bold text-slate-900 dark:text-white text-base mb-1">Batch & Expiry Management</h5>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Track batch numbers and shelf life to eliminate food & product wastage.</p>
+                    </div>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              category: "FULL PLATFORM VIEW",
+              title: "One dashboard. Every sale, every product, every insight.",
+              src: "/hero_new.png",
+              content: (
+                <div className="space-y-4">
+                  <p className="text-slate-700 dark:text-slate-300 text-base md:text-lg leading-relaxed">
+                    The Bilix command center gives you a live view of your entire retail operation — from the POS terminal screen to your inventory levels, sales graphs, and connected payment terminals. Everything in one place.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                    <div className="bg-blue-50 dark:bg-blue-950/30 p-5 rounded-2xl border border-blue-100 dark:border-blue-900/40 shadow-sm">
+                      <h5 className="font-bold text-blue-900 dark:text-blue-200 text-base mb-1">Unified POS Dashboard</h5>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">Monitor live sales, receipts, and inventory from a single Bilix dashboard screen.</p>
+                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-950/30 p-5 rounded-2xl border border-blue-100 dark:border-blue-900/40 shadow-sm">
+                      <h5 className="font-bold text-blue-900 dark:text-blue-200 text-base mb-1">Connected Payment Terminal</h5>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">NFC, UPI, card, and cash all flow into one receipt — no manual reconciliation needed.</p>
+                    </div>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              category: "SPEED AT CHECKOUT",
+              title: "Scan, pay, done — queues vanish in seconds.",
+              src: "/zs-supermarket-benefits-image-3-2x.webp",
+              content: (
+                <div className="space-y-4">
+                  <p className="text-slate-700 dark:text-slate-300 text-base md:text-lg leading-relaxed">
+                    Process billing transactions in sub-second speed with high-volume barcode scanning and multi-mode payment collection. Seamlessly accept UPI, Razorpay QR codes, Credit/Debit cards, and Cash.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                      <h5 className="font-bold text-slate-900 dark:text-white text-base mb-1">Dynamic UPI & QR Codes</h5>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Generates instant payment QR code right on cashier screen for zero-friction payment.</p>
+                    </div>
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                      <h5 className="font-bold text-slate-900 dark:text-white text-base mb-1">Thermal & WhatsApp Receipts</h5>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Print instant thermal receipts or send digital paperless receipts via SMS/WhatsApp.</p>
+                    </div>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              category: "CHAIN MANAGEMENT",
+              title: "Run ten stores from one screen. Centrally. Cleanly.",
+              src: "/zs-supermarket-benefits-image-4-2x.webp",
+              content: (
+                <div className="space-y-4">
+                  <p className="text-slate-700 dark:text-slate-300 text-base md:text-lg leading-relaxed">
+                    Managing 2 or 50 branches? Bilix gives super admins centralized control over multi-store product catalogs, pricing rules, tax settings, and stock transfers from a single unified cloud portal.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                      <h5 className="font-bold text-slate-900 dark:text-white text-base mb-1">Inter-Store Stock Transfers</h5>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Move excess inventory between branches seamlessly with real-time transfer tracking.</p>
+                    </div>
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                      <h5 className="font-bold text-slate-900 dark:text-white text-base mb-1">Centralized Price Updates</h5>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Update item prices or launch discounts across all stores in one single click.</p>
+                    </div>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              category: "CASH ACCOUNTABILITY",
+              title: "Every rupee tracked. Every shift closed without a gap.",
+              src: "/zs-supermarket-benefits-image-5-2x.webp",
+              content: (
+                <div className="space-y-4">
+                  <p className="text-slate-700 dark:text-slate-300 text-base md:text-lg leading-relaxed">
+                    Ensure 100% cashier accountability with shift-based register drawer reconciliation. Track opening cash, cash drops, card totals, and manager approvals for voids and refunds.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                      <h5 className="font-bold text-slate-900 dark:text-white text-base mb-1">Shift Closing Reconciliation</h5>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Automated end-of-day till reports comparing physical cash count with register ledger.</p>
+                    </div>
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                      <h5 className="font-bold text-slate-900 dark:text-white text-base mb-1">Role-Based Cashier Security</h5>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Restrict price overrides, discounts, and register opening to authorized managers.</p>
+                    </div>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              category: "HARDWARE SYNC",
+              title: "Weigh it. Scan it. Bill it — in one fluid motion.",
+              src: "/pos_weighing_scale.png",
+              content: (
+                <div className="space-y-4">
+                  <p className="text-slate-700 dark:text-slate-300 text-base md:text-lg leading-relaxed">
+                    Instantly weigh fresh fruits, vegetables, and bulk grains at the billing counter with direct weighing scale integration into Bilix POS, automatically calculating exact weights and prices.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                      <h5 className="font-bold text-slate-900 dark:text-white text-base mb-1">Auto Weight Fetching</h5>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Eliminates manual weight entry errors with sub-gram scale hardware integration.</p>
+                    </div>
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                      <h5 className="font-bold text-slate-900 dark:text-white text-base mb-1">Embedded Barcode Printing</h5>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Print price-embedded barcodes for pre-packed items at your weighing stations.</p>
+                    </div>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              category: "ALWAYS ONLINE",
+              title: "No internet? No problem. Billing never stops.",
+              src: "/pos_offline_sync.png",
+              content: (
+                <div className="space-y-4">
+                  <p className="text-slate-700 dark:text-slate-300 text-base md:text-lg leading-relaxed">
+                    Never lose a sale due to poor internet connection. Bilix POS stores all local billing transactions securely on the terminal and auto-synchronizes with the cloud as soon as connection is restored.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                      <h5 className="font-bold text-slate-900 dark:text-white text-base mb-1">100% Offline Billing</h5>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Keep registers running and bills printing even without Wi-Fi connection.</p>
+                    </div>
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                      <h5 className="font-bold text-slate-900 dark:text-white text-base mb-1">Background Cloud Sync</h5>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Automatic background sync resolves duplicate invoices and updates stock levels globally.</p>
+                    </div>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              category: "LIVE ANALYTICS",
+              title: "See profit margins move — in real time, on any device.",
+              src: "/pos_analytics_card.png",
+              content: (
+                <div className="space-y-4">
+                  <p className="text-slate-700 dark:text-slate-300 text-base md:text-lg leading-relaxed">
+                    Make data-backed decisions with Bilix live analytics. Monitor peak hour store traffic, top grossing categories, gross profit margins, and sales rep performance right from your mobile device.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                      <h5 className="font-bold text-slate-900 dark:text-white text-base mb-1">Live Executive Dashboard</h5>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Real-time revenue stream tracking with visual charts updated every minute.</p>
+                    </div>
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                      <h5 className="font-bold text-slate-900 dark:text-white text-base mb-1">Automated GST & P&L Reports</h5>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Receive automated daily P&L and GST tax summaries delivered directly to your inbox.</p>
+                    </div>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              category: "LOYALTY & CRM",
+              title: "Customers come back. Because Bilix remembers them.",
+              src: "/customer_loyalty_card.png",
+              content: (
+                <div className="space-y-4">
+                  <p className="text-slate-700 dark:text-slate-300 text-base md:text-lg leading-relaxed">
+                    Turn one-time shoppers into lifelong loyal customers. Bilix automatically tracks purchase history by customer phone number, awards loyalty points, and enables instant point redemption at billing.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                      <h5 className="font-bold text-slate-900 dark:text-white text-base mb-1">Instant Reward Redemption</h5>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Shoppers redeem saved reward points as instant cash discounts at checkout.</p>
+                    </div>
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                      <h5 className="font-bold text-slate-900 dark:text-white text-base mb-1">Personalized SMS Offers</h5>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Send custom discount vouchers to inactive customers to drive repeat store footfall.</p>
+                    </div>
+                  </div>
+                </div>
+              ),
+            },
+          ].map((card, idx) => (
+            <AppleCard key={card.title} card={card} index={idx} />
+          ))}
+        />
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-800">
+      <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8 bg-[#F0F4FB] dark:bg-[#0C1424] transition-colors">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              Choose Your Plan
+            <span
+              className="inline-block text-xs font-extrabold uppercase tracking-widest text-blue-700 dark:text-blue-300 bg-blue-500/10 border border-blue-500/30 px-4 py-1.5 rounded-full mb-4"
+              style={{ fontFamily: "'JetBrains Mono', 'Monaco', monospace" }}
+            >
+              PRICING
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white mb-4">
+              Simple, Transparent Pricing
             </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
-              Flexible pricing plans to suit businesses of all sizes
+            <p className="text-lg text-slate-600 dark:text-slate-400">
+              Choose the plan that best fits your business needs
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {pricingPlans.map((plan, index) => (
-              <Card
-                key={index}
-                className={`relative border-2 ${plan.popular
-                  ? 'border-blue-600 dark:border-blue-400 shadow-xl scale-105'
-                  : 'border-gray-200 dark:border-gray-700'
-                  }`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <span className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-medium">
-                      Most Popular
-                    </span>
-                  </div>
-                )}
-                <CardContent className="p-8">
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                    {plan.name}
-                  </h3>
-                  <div className="mb-6">
-                    <span className="text-4xl font-bold text-gray-900 dark:text-white">
-                      {plan.price}
-                    </span>
-                    <span className="text-gray-600 dark:text-gray-300">{plan.period}</span>
-                  </div>
-                  <ul className="space-y-3 mb-8">
-                    {plan.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <CheckCircle2 className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                        <span className="text-gray-700 dark:text-gray-300">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button
-                    className={`w-full ${plan.popular
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : 'bg-gray-900 hover:bg-gray-800 text-white dark:bg-gray-700 dark:hover:bg-gray-600'
+            {[
+              {
+                name: 'Starter',
+                price: '$29',
+                period: '/month',
+                popular: false,
+                features: ['1 Store Location', 'Up to 3 Users', 'Basic Analytics', 'Standard Support'],
+              },
+              {
+                name: 'Professional',
+                price: '$79',
+                period: '/month',
+                popular: true,
+                features: ['Up to 5 Store Locations', 'Unlimited Users', 'Advanced Analytics', '24/7 Priority Support', 'Custom Reports'],
+              },
+              {
+                name: 'Enterprise',
+                price: 'Custom',
+                period: '',
+                popular: false,
+                features: ['Unlimited Locations', 'Unlimited Users', 'Dedicated Account Manager', 'Custom Integrations', 'SLA Guarantee'],
+              },
+            ].map((plan, index) => (
+              <CometCard key={plan.name}>
+                <div className="relative h-full rounded-2xl border border-black/10 dark:border-white/10 p-2">
+                  <GlowingEffect
+                    spread={40}
+                    glow={true}
+                    disabled={false}
+                    proximity={64}
+                    inactiveZone={0.01}
+                    borderWidth={2}
+                  />
+                  <div
+                    className={`relative flex h-full flex-col rounded-xl p-8 ${plan.popular ? 'bg-white dark:bg-slate-900' : 'bg-white/70 dark:bg-slate-900/70'
                       }`}
-                    onClick={() => navigate('/auth/register')}
                   >
-                    Get Started
-                  </Button>
-                </CardContent>
-              </Card>
+                    {plan.popular && (
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg shadow-blue-600/30">
+                        Most Popular
+                      </span>
+                    )}
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                      {plan.name}
+                    </h3>
+                    <div className="mb-6">
+                      <span className="text-4xl font-black text-slate-900 dark:text-white">
+                        {plan.price}
+                      </span>
+                      <span className="text-slate-500 dark:text-slate-400">{plan.period}</span>
+                    </div>
+                    <ul className="space-y-3 mb-8 flex-1">
+                      {plan.features.map((feature, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <CheckCircle2 className="h-5 w-5 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
+                          <span className="text-slate-700 dark:text-slate-300">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Button
+                      className={`w-full ${plan.popular
+                        ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30'
+                        : 'bg-slate-800 hover:bg-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 text-white'
+                        }`}
+                      onClick={() => navigate('/auth/register')}
+                    >
+                      Get Started
+                    </Button>
+                  </div>
+                </div>
+              </CometCard>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why Us Section */}
+      <section id="why-us" className="py-24 px-4 sm:px-6 lg:px-8 bg-[#E9EFFA] dark:bg-[#0A101E] transition-colors">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-16">
+            <span
+              className="inline-block text-xs font-extrabold uppercase tracking-widest text-blue-700 dark:text-blue-300 bg-blue-500/10 border border-blue-500/30 px-4 py-1.5 rounded-full mb-4"
+              style={{ fontFamily: "'JetBrains Mono', 'Monaco', monospace" }}
+            >
+              WHY BILIX
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white mb-4">
+              Why teams switch to Bilix
+            </h2>
+            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
+              No pricing tricks, no fine print — just the things most other POS platforms make you live without.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              {
+                icon: Zap,
+                title: 'No Setup Fees',
+                description: 'Start billing today. No onboarding cost, no hidden charges to get going.',
+              },
+              {
+                icon: Shield,
+                title: 'Works Without Internet',
+                description: "Most platforms stop cold on a dropped connection. Bilix keeps billing and syncs later.",
+              },
+              {
+                icon: Store,
+                title: 'Built for Chains from Day One',
+                description: 'Run 2 branches or 200 from one dashboard — no extra charge per location.',
+              },
+              {
+                icon: Users,
+                title: 'Real Human Support',
+                description: "Talk to a person, not a ticket queue, whenever something breaks.",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-white/[0.03] p-6"
+              >
+                <div className="w-11 h-11 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
+                  <item.icon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1.5">
+                  {item.title}
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                  {item.description}
+                </p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* Testimonials Section */}
-      <section id="testimonials" className="py-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-900">
+      <section id="testimonials" className="py-24 px-4 sm:px-6 lg:px-8 bg-[#E2E9F7] dark:bg-[#080D19] overflow-hidden transition-colors">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white mb-4">
               What Our Customers Say
             </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
+            <p className="text-lg text-slate-600 dark:text-slate-400">
               Trusted by businesses worldwide
             </p>
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="border border-gray-200 dark:border-gray-700">
-                <CardContent className="p-6">
-                  <div className="flex mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <span key={i} className="text-yellow-400">★</span>
-                    ))}
+        <div className="flex justify-center">
+          <InfiniteMovingCards
+            items={testimonials.map((t) => ({
+              quote: t.content,
+              name: t.name,
+              title: `${t.role}, ${t.company}`,
+            }))}
+            direction="right"
+            speed="slow"
+          />
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section id="faq" className="py-24 px-4 sm:px-6 lg:px-8 bg-[#DCE4F5] dark:bg-[#060A14] transition-colors">
+        <div className="container mx-auto max-w-4xl">
+          <div className="text-center mb-14">
+            <span
+              className="inline-block text-xs font-extrabold uppercase tracking-widest text-blue-700 dark:text-blue-300 bg-blue-500/10 border border-blue-500/30 px-4 py-1.5 rounded-full mb-4"
+              style={{ fontFamily: "'JetBrains Mono', 'Monaco', monospace" }}
+            >
+              FAQ
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white mb-3">
+              Questions, answered.
+            </h2>
+            <p className="text-slate-600 dark:text-slate-400 text-lg">
+              Everything you need to know before you switch to Bilix.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {faqs.map((faq, index) => {
+              const isOpen = openFaqIndex === index
+              return (
+                <div
+                  key={faq.question}
+                  className={`rounded-2xl border transition-colors ${isOpen ? 'border-blue-600/50 bg-white dark:bg-slate-900' : 'border-slate-200 dark:border-slate-800 bg-white/60 dark:bg-slate-900/50'
+                    }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaqIndex(isOpen ? -1 : index)}
+                    className="flex w-full items-center justify-between gap-4 p-6 text-left cursor-pointer"
+                  >
+                    <div className="flex items-center gap-4">
+                      <span
+                        className="text-sm font-bold text-blue-600 dark:text-blue-400"
+                        style={{ fontFamily: "'JetBrains Mono', 'Monaco', monospace" }}
+                      >
+                        {String(index + 1).padStart(2, '0')}
+                      </span>
+                      <span className="text-lg font-bold text-slate-900 dark:text-white">{faq.question}</span>
+                    </div>
+                    <Plus
+                      className={`h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400 transition-transform duration-300 ${isOpen ? 'rotate-45' : ''
+                        }`}
+                    />
+                  </button>
+                  <div
+                    className={`grid transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                      }`}
+                  >
+                    <div className="overflow-hidden">
+                      <p className="px-6 pb-6 pl-[3.25rem] text-slate-600 dark:text-slate-400 leading-relaxed">
+                        {faq.answer}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-gray-700 dark:text-gray-300 mb-4">
-                    "{testimonial.content}"
-                  </p>
-                  <div>
-                    <p className="font-semibold text-gray-900 dark:text-white">
-                      {testimonial.name}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {testimonial.role}, {testimonial.company}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-blue-600 dark:bg-blue-700">
-        <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+      <section className="relative py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-600 to-blue-800 dark:from-blue-800 dark:to-slate-950 overflow-hidden">
+        <div className="container mx-auto max-w-4xl text-center relative z-10">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4 tracking-tight">
             Ready to Transform Your Business?
           </h2>
-          <p className="text-lg text-blue-100 mb-8">
-            Join thousands of businesses using POS Pro to streamline their operations
+          <p className="text-lg text-blue-100 mb-10 max-w-xl mx-auto">
+            Join thousands of retail stores and supermarkets using Bilix to streamline operations
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               size="lg"
-              className="bg-white text-blue-600 hover:bg-gray-100 text-lg px-8 py-6"
+              className="bg-white text-blue-700 hover:bg-blue-50 font-extrabold text-lg px-8 py-6 rounded-full shadow-xl hover:scale-105 transition-all"
               asChild
             >
               <Link to="/auth/register">
@@ -528,55 +791,87 @@ const LandingPage = () => {
             <Button
               size="lg"
               variant="outline"
-              className="border-2 border-white text-white hover:bg-white hover:text-blue-600 text-lg px-8 py-6"
+              className="border-2 border-white bg-transparent text-white hover:bg-white hover:text-blue-700 font-extrabold text-lg px-8 py-6 rounded-full"
+              asChild
             >
-              Contact Sales
+              <a href="#contact">
+                Contact Sales
+              </a>
             </Button>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer id="contact" className="py-12 px-4 sm:px-6 lg:px-8 bg-gray-900 text-gray-300">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+      <footer
+        id="contact"
+        className="relative overflow-hidden pt-20 pb-4 px-4 sm:px-6 lg:px-8 bg-[#D6E0F3] dark:bg-[#04070F] border-t border-slate-200 dark:border-white/10 transition-colors"
+      >
+        <div className="container mx-auto max-w-6xl relative z-10">
+          <div className="border-t border-slate-200 dark:border-white/10 pt-10" />
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-12 pb-24">
+            {/* Logo + Copyright */}
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <img src={logoP} alt="POS Pro" className="h-10 w-10 object-contain rounded-full" />
-                <span className="text-xl font-bold text-white">POS Pro</span>
+              <div className="flex items-center gap-3 mb-4">
+                <img src="/bilix_logo.png" alt="Bilix" className="h-9 w-9 object-contain rounded-lg bg-black p-0.5 border border-black/10 dark:border-white/10" />
+                <span className="text-xl font-black text-slate-900 dark:text-white">Bilix</span>
               </div>
-              <p className="text-sm">
-                Powerful POS system for modern retail businesses
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                © 2026 Bilix POS System. All rights reserved.
               </p>
             </div>
-            <div>
-              <h4 className="font-semibold text-white mb-4">Product</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#features" className="hover:text-blue-400">Features</a></li>
-                <li><a href="#pricing" className="hover:text-blue-400">Pricing</a></li>
-                <li><a href="#" className="hover:text-blue-400">Documentation</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-white mb-4">Company</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-blue-400">About</a></li>
-                <li><a href="#" className="hover:text-blue-400">Blog</a></li>
-                <li><a href="#contact" className="hover:text-blue-400">Contact</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-white mb-4">Support</h4>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="hover:text-blue-400">Help Center</a></li>
-                <li><a href="#" className="hover:text-blue-400">API Docs</a></li>
-                <li><a href="#" className="hover:text-blue-400">Status</a></li>
-              </ul>
+
+            {/* Link Columns */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-10">
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Pages</h4>
+                <ul className="space-y-2.5 text-sm text-slate-500 dark:text-slate-400">
+                  <li><a href="#features" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Features</a></li>
+                  <li><a href="#pricing" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Pricing</a></li>
+                  <li><a href="#testimonials" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Testimonials</a></li>
+                  <li><a href="#faq" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">FAQ</a></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Company</h4>
+                <ul className="space-y-2.5 text-sm text-slate-500 dark:text-slate-400">
+                  <li><a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">About</a></li>
+                  <li><a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Blog</a></li>
+                  <li><a href="#contact" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Contact</a></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Legal</h4>
+                <ul className="space-y-2.5 text-sm text-slate-500 dark:text-slate-400">
+                  <li><a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Privacy Policy</a></li>
+                  <li><a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Terms of Service</a></li>
+                  <li><a href="#" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Cookie Policy</a></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Account</h4>
+                <ul className="space-y-2.5 text-sm text-slate-500 dark:text-slate-400">
+                  <li>
+                    <button onClick={() => navigate('/auth/register')} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer">
+                      Sign Up
+                    </button>
+                  </li>
+                  <li>
+                    <button onClick={() => navigate('/auth/login')} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer">
+                      Login
+                    </button>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
-          <div className="border-t border-gray-800 pt-8 text-center text-sm">
-            <p>© 2024 POS Pro. All rights reserved.</p>
-          </div>
+        </div>
+
+        {/* Giant bleeding wordmark accent */}
+        <div aria-hidden="true" className="w-full overflow-hidden pointer-events-none select-none">
+          <span className="block pl-4 sm:pl-8 font-black text-[22vw] sm:text-[16vw] leading-[0.75] tracking-tight text-slate-900/[0.04] dark:text-white/[0.05] whitespace-nowrap">
+            Bilix
+          </span>
         </div>
       </footer>
     </div>
@@ -584,4 +879,3 @@ const LandingPage = () => {
 }
 
 export default LandingPage
-
