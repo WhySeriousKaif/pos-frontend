@@ -90,31 +90,36 @@ const SuperAdminDashboard = () => {
       setStats({ totalStores, pendingRequests, totalSales, totalRefunds })
 
       // Sales vs Refunds for the last 12 months
+      // Pin the day to 1 before subtracting months — setMonth() on a date like the
+      // 31st rolls over into the next month for any target month with fewer than
+      // 31 days (Apr/Jun/Sep/Nov/Feb), which produced duplicate/skipped labels.
+      const now = new Date()
+      // Key by year-month (not just "MMM") so orders from a different year never
+      // collide with the current year's same-named month.
       const last12Months = Array.from({ length: 12 }, (_, i) => {
-        const date = new Date()
-        date.setMonth(date.getMonth() - (11 - i))
-        return format(date, 'MMM')
+        const date = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1)
+        return { key: format(date, 'yyyy-MM'), label: format(date, 'MMM') }
       })
       const salesByMonth = {}
       const refundsByMonth = {}
-      last12Months.forEach((m) => {
-        salesByMonth[m] = 0
-        refundsByMonth[m] = 0
+      last12Months.forEach(({ key }) => {
+        salesByMonth[key] = 0
+        refundsByMonth[key] = 0
       })
       orders.forEach((order) => {
         if (order.createdAt) {
-          const m = format(new Date(order.createdAt), 'MMM')
-          if (salesByMonth.hasOwnProperty(m)) salesByMonth[m] += order.totalAmount || 0
+          const key = format(new Date(order.createdAt), 'yyyy-MM')
+          if (salesByMonth.hasOwnProperty(key)) salesByMonth[key] += order.totalAmount || 0
         }
       })
       refunds.forEach((refund) => {
         if (refund.createdAt) {
-          const m = format(new Date(refund.createdAt), 'MMM')
-          if (refundsByMonth.hasOwnProperty(m)) refundsByMonth[m] += refund.amount || 0
+          const key = format(new Date(refund.createdAt), 'yyyy-MM')
+          if (refundsByMonth.hasOwnProperty(key)) refundsByMonth[key] += refund.amount || 0
         }
       })
       setMonthlyData(
-        last12Months.map((m) => ({ month: m, sales: salesByMonth[m], refunds: refundsByMonth[m] }))
+        last12Months.map(({ key, label }) => ({ month: label, sales: salesByMonth[key], refunds: refundsByMonth[key] }))
       )
 
       // Sales by store (top 5)
