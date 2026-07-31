@@ -1,7 +1,44 @@
 import jsPDF from 'jspdf'
 
 /**
- * Generate a PDF invoice for an order
+ * Format currency in Indian Rupees (INR)
+ * Uses standard ASCII 'INR' to guarantee 100% clean rendering in jsPDF without character code distortion.
+ */
+const formatCurrency = (amount) => {
+  return `INR ${(amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+/**
+ * Get payment method label
+ */
+const getPaymentMethodLabel = (method) => {
+  if (!method) return 'Cash'
+  const methodMap = {
+    CASH: 'Cash',
+    CARD: 'Card / Debit',
+    UPI: 'UPI / Digital Payment',
+    DEBIT_CARD: 'Debit Card',
+    CREDIT_CARD: 'Credit Card',
+  }
+  return methodMap[method] || method
+}
+
+/**
+ * Get status label
+ */
+const getStatusLabel = (status) => {
+  if (!status) return 'Completed'
+  const statusMap = {
+    PENDING: 'Pending',
+    COMPLETED: 'Completed',
+    CANCELLED: 'Cancelled',
+    REFUNDED: 'Refunded',
+  }
+  return statusMap[status] || status
+}
+
+/**
+ * Generate an executive blue PDF invoice for an order
  * @param {Object} order - The order object
  * @param {Object} options - Additional options
  * @returns {jsPDF} - The PDF document
@@ -10,7 +47,7 @@ export const generateInvoicePDF = (order, options = {}) => {
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
-  const margin = 20
+  const margin = 15
   let yPos = margin
 
   // Helper function to add a new page if needed
@@ -23,220 +60,230 @@ export const generateInvoicePDF = (order, options = {}) => {
     return false
   }
 
-  // Header
-  doc.setFontSize(24)
-  doc.setTextColor(22, 163, 74) // Green color
-  doc.setFont('helvetica', 'bold')
-  doc.text('INVOICE', pageWidth - margin, yPos, { align: 'right' })
-  yPos += 10
+  // 1. Sleek Blue Header Banner
+  doc.setFillColor(37, 99, 235) // Primary Executive Blue (#2563EB)
+  doc.rect(0, 0, pageWidth, 40, 'F')
 
-  doc.setFontSize(10)
-  doc.setTextColor(0, 0, 0)
+  doc.setFontSize(22)
+  doc.setTextColor(255, 255, 255)
+  doc.setFont('helvetica', 'bold')
+  const branchTitle = order.branch?.name || order.branch?.store?.brand || 'BILIX POS SYSTEM'
+  doc.text(branchTitle.toUpperCase(), margin, 24)
+
+  doc.setFontSize(14)
+  doc.setFont('helvetica', 'bold')
+  doc.text('TAX INVOICE', pageWidth - margin, 24, { align: 'right' })
+
+  doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
-  doc.text(`Invoice #${order.id}`, pageWidth - margin, yPos, { align: 'right' })
-  yPos += 15
+  doc.setTextColor(224, 242, 254) // Light sky blue subtext
+  doc.text(`Invoice #: ${order.id || 'N/A'}`, pageWidth - margin, 32, { align: 'right' })
 
-  // Company/Branch Info
-  const branchName = order.branch?.name || order.branch?.store?.brand || 'POS System'
-  const branchAddress = order.branch?.address || ''
-  const branchPhone = order.branch?.phone || ''
-  const branchEmail = order.branch?.email || ''
+  yPos = 48
 
-  doc.setFontSize(12)
-  doc.setFont('helvetica', 'bold')
-  doc.text(branchName, margin, yPos)
-  yPos += 6
+  // 2. Branch & Customer Meta Info (2 Columns)
+  const leftColX = margin
+  const rightColX = pageWidth / 2 + 10
 
+  // Left Column: Store / Branch Info
   doc.setFontSize(10)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(30, 41, 59)
+  doc.text('STORE & BRANCH DETAILS', leftColX, yPos)
+  
+  doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
-  if (branchAddress) {
-    doc.text(branchAddress, margin, yPos)
-    yPos += 5
-  }
-  if (branchPhone) {
-    doc.text(`Phone: ${branchPhone}`, margin, yPos)
-    yPos += 5
-  }
-  if (branchEmail) {
-    doc.text(`Email: ${branchEmail}`, margin, yPos)
-    yPos += 5
-  }
-  yPos += 10
+  doc.setTextColor(71, 85, 105)
+  
+  const branchAddress = order.branch?.address || 'Main Commercial Mall, City Center'
+  const branchPhone = order.branch?.phone || '+91 9876543210'
+  const branchEmail = order.branch?.email || 'support@molla-pos.com'
 
-  // Customer Info
-  const customerName = order.customer?.name || order.customer?.fullName || 'Walk-in Customer'
-  const customerEmail = order.customer?.email || ''
-  const customerPhone = order.customer?.phone || ''
+  let leftY = yPos + 6
+  doc.text(branchAddress, leftColX, leftY)
+  leftY += 5
+  doc.text(`Phone: ${branchPhone}`, leftColX, leftY)
+  leftY += 5
+  doc.text(`Email: ${branchEmail}`, leftColX, leftY)
 
-  doc.setFontSize(12)
-  doc.setFont('helvetica', 'bold')
-  doc.text('Bill To:', margin, yPos)
-  yPos += 6
+  // Right Column: Customer & Transaction Info
+  const customerName = typeof order.customer === 'string'
+    ? order.customer
+    : (order.customer?.name || order.customer?.fullName || 'Walk-in Customer')
+  const customerPhone = order.customer?.phone || 'N/A'
+  const invoiceDate = order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  }) : new Date().toLocaleDateString('en-IN')
+  const invoiceTime = order.createdAt ? new Date(order.createdAt).toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit'
+  }) : new Date().toLocaleTimeString('en-IN')
 
   doc.setFontSize(10)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(30, 41, 59)
+  doc.text('CUSTOMER & ORDER META', rightColX, yPos)
+
+  doc.setFontSize(9)
   doc.setFont('helvetica', 'normal')
-  doc.text(customerName, margin, yPos)
-  yPos += 5
-  if (customerEmail) {
-    doc.text(`Email: ${customerEmail}`, margin, yPos)
-    yPos += 5
-  }
-  if (customerPhone) {
-    doc.text(`Phone: ${customerPhone}`, margin, yPos)
-    yPos += 5
-  }
-  yPos += 10
+  doc.setTextColor(71, 85, 105)
 
-  // Invoice Details
-  const invoiceDate = order.createdAt
-    ? new Date(order.createdAt).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
-    : new Date().toLocaleDateString()
+  let rightY = yPos + 6
+  doc.text(`Billed To: ${customerName}`, rightColX, rightY)
+  rightY += 5
+  doc.text(`Phone: ${customerPhone}`, rightColX, rightY)
+  rightY += 5
+  doc.text(`Date & Time: ${invoiceDate}, ${invoiceTime}`, rightColX, rightY)
+  rightY += 5
+  doc.text(`Payment Method: ${getPaymentMethodLabel(order.paymentType)}`, rightColX, rightY)
 
-  const invoiceTime = order.createdAt
-    ? new Date(order.createdAt).toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    : new Date().toLocaleTimeString()
+  yPos = Math.max(leftY, rightY) + 12
 
-  doc.setFontSize(10)
-  doc.text(`Date: ${invoiceDate}`, pageWidth - margin, yPos - 20, { align: 'right' })
-  doc.text(`Time: ${invoiceTime}`, pageWidth - margin, yPos - 15, { align: 'right' })
-  doc.text(`Payment: ${getPaymentMethodLabel(order.paymentType)}`, pageWidth - margin, yPos - 10, {
-    align: 'right',
-  })
-  doc.text(`Status: ${getStatusLabel(order.status)}`, pageWidth - margin, yPos - 5, {
-    align: 'right',
-  })
+  // 3. Order Items Table Header
+  checkPageBreak(25)
+  doc.setFillColor(37, 99, 235) // Executive Blue Table Header
+  doc.rect(margin, yPos, pageWidth - 2 * margin, 9, 'F')
 
-  yPos += 15
-
-  // Line separator
-  doc.setDrawColor(200, 200, 200)
-  doc.line(margin, yPos, pageWidth - margin, yPos)
-  yPos += 10
-
-  // Order Items Table Header
-  checkPageBreak(20)
-  doc.setFontSize(10)
+  doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
-  doc.setFillColor(240, 240, 240)
-  doc.rect(margin, yPos, pageWidth - 2 * margin, 8, 'F')
-  doc.text('Item', margin + 2, yPos + 6)
-  doc.text('Qty', pageWidth - 120, yPos + 6, { align: 'right' })
-  doc.text('Price', pageWidth - 80, yPos + 6, { align: 'right' })
-  doc.text('Total', pageWidth - margin, yPos + 6, { align: 'right' })
+  doc.setTextColor(255, 255, 255)
+
+  doc.text('#', margin + 3, yPos + 6)
+  doc.text('Item Description', margin + 12, yPos + 6)
+  doc.text('Qty', pageWidth - 100, yPos + 6, { align: 'right' })
+  doc.text('Unit Price', pageWidth - 55, yPos + 6, { align: 'right' })
+  doc.text('Total', pageWidth - margin - 3, yPos + 6, { align: 'right' })
+
   yPos += 12
 
-  // Order Items
+  // 4. Order Item Rows
   doc.setFont('helvetica', 'normal')
+  doc.setTextColor(30, 41, 59)
+
   const orderItems = order.orderItems || []
-  orderItems.forEach((item, index) => {
-    checkPageBreak(15)
-    const productName = item.product?.name || 'Unknown Product'
-    const sku = item.product?.sku || ''
-    const quantity = item.quantity || 0
-    const price = item.price || 0
-    const total = quantity * price
+  if (orderItems.length === 0) {
+    doc.setFontSize(9)
+    doc.text('Order Items Included', margin + 12, yPos + 4)
+    doc.text('1', pageWidth - 100, yPos + 4, { align: 'right' })
+    doc.text(formatCurrency(order.totalAmount), pageWidth - 55, yPos + 4, { align: 'right' })
+    doc.text(formatCurrency(order.totalAmount), pageWidth - margin - 3, yPos + 4, { align: 'right' })
+    yPos += 10
+  } else {
+    orderItems.forEach((item, index) => {
+      checkPageBreak(14)
+      const itemNum = (index + 1).toString()
+      const productName = item.product?.name || item.productName || 'General Item'
+      const quantity = item.quantity || 1
+      const price = item.price || item.unitPrice || 0
+      const lineTotal = quantity * price
 
-    // Truncate product name if too long
-    const maxNameWidth = pageWidth - 140
-    let displayName = productName
-    if (doc.getTextWidth(displayName) > maxNameWidth) {
-      displayName = doc.splitTextToSize(displayName, maxNameWidth)[0] + '...'
-    }
+      // Alternating row background
+      if (index % 2 === 1) {
+        doc.setFillColor(248, 250, 252)
+        doc.rect(margin, yPos - 3, pageWidth - 2 * margin, 11, 'F')
+      }
 
-    doc.text(displayName, margin + 2, yPos + 5)
-    if (sku) {
-      doc.setFontSize(8)
-      doc.setTextColor(128, 128, 128)
-      doc.text(`SKU: ${sku}`, margin + 2, yPos + 9)
-      doc.setFontSize(10)
-      doc.setTextColor(0, 0, 0)
-    }
-    doc.text(quantity.toString(), pageWidth - 120, yPos + 5, { align: 'right' })
-    doc.text(formatCurrency(price), pageWidth - 80, yPos + 5, { align: 'right' })
-    doc.text(formatCurrency(total), pageWidth - margin, yPos + 5, { align: 'right' })
+      doc.setFontSize(9)
+      doc.setFont('helvetica', 'bold')
+      doc.text(itemNum, margin + 3, yPos + 3)
 
-    yPos += 12
-  })
+      let displayName = productName
+      const maxNameWidth = pageWidth - 130
+      if (doc.getTextWidth(displayName) > maxNameWidth) {
+        displayName = doc.splitTextToSize(displayName, maxNameWidth)[0] + '...'
+      }
+      doc.text(displayName, margin + 12, yPos + 3)
 
-  yPos += 5
+      doc.setFont('helvetica', 'normal')
+      doc.text(quantity.toString(), pageWidth - 100, yPos + 3, { align: 'right' })
+      doc.text(formatCurrency(price), pageWidth - 55, yPos + 3, { align: 'right' })
+      doc.setFont('helvetica', 'bold')
+      doc.text(formatCurrency(lineTotal), pageWidth - margin - 3, yPos + 3, { align: 'right' })
 
-  // Line separator
-  doc.setDrawColor(200, 200, 200)
+      yPos += 11
+    })
+  }
+
+  yPos += 4
+
+  // Separator Line
+  doc.setDrawColor(226, 232, 240)
   doc.line(margin, yPos, pageWidth - margin, yPos)
-  yPos += 10
+  yPos += 8
 
-  // Totals
-  checkPageBreak(30)
+  // 5. Totals Breakdown Card
+  checkPageBreak(40)
   const subtotal = order.subtotal || order.totalAmount || 0
   const discount = order.discountAmount || 0
   const tax = order.tax || 0
   const total = order.totalAmount || 0
 
-  if (discount > 0) {
-    doc.setFontSize(10)
-    doc.text('Subtotal:', pageWidth - 80, yPos, { align: 'right' })
-    doc.text(formatCurrency(subtotal), pageWidth - margin, yPos, { align: 'right' })
-    yPos += 8
+  const summaryX = pageWidth - margin - 90
 
-    doc.text('Discount:', pageWidth - 80, yPos, { align: 'right' })
-    doc.setTextColor(220, 38, 38) // Red for discount
-    doc.text(`-${formatCurrency(discount)}`, pageWidth - margin, yPos, { align: 'right' })
-    doc.setTextColor(0, 0, 0)
-    yPos += 8
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(71, 85, 105)
+
+  if (discount > 0) {
+    doc.text('Subtotal:', summaryX, yPos)
+    doc.text(formatCurrency(subtotal), pageWidth - margin - 3, yPos, { align: 'right' })
+    yPos += 6
+
+    doc.text('Discount:', summaryX, yPos)
+    doc.setTextColor(220, 38, 38)
+    doc.text(`-${formatCurrency(discount)}`, pageWidth - margin - 3, yPos, { align: 'right' })
+    doc.setTextColor(71, 85, 105)
+    yPos += 6
   }
 
   if (tax > 0) {
-    doc.text('Tax:', pageWidth - 80, yPos, { align: 'right' })
-    doc.text(formatCurrency(tax), pageWidth - margin, yPos, { align: 'right' })
-    yPos += 8
+    doc.text('Estimated Tax:', summaryX, yPos)
+    doc.text(formatCurrency(tax), pageWidth - margin - 3, yPos, { align: 'right' })
+    yPos += 6
   }
 
-  // Total
-  doc.setFontSize(12)
-  doc.setFont('helvetica', 'bold')
-  doc.setFillColor(22, 163, 74) // Green background
-  doc.setTextColor(255, 255, 255) // White text
-  doc.rect(pageWidth - 80, yPos - 5, 60, 10, 'F')
-  doc.text('Total:', pageWidth - 80, yPos + 2, { align: 'right' })
-  doc.text(formatCurrency(total), pageWidth - margin, yPos + 2, { align: 'right' })
-  doc.setTextColor(0, 0, 0)
-  yPos += 20
+  // Grand Total Box - Generous Width to prevent overlap
+  doc.setFillColor(37, 99, 235) // Executive Primary Blue
+  doc.roundedRect(pageWidth - margin - 95, yPos, 95, 14, 2, 2, 'F')
 
-  // Footer
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(255, 255, 255)
+  doc.text('TOTAL PAID:', pageWidth - margin - 90, yPos + 9.5)
+  doc.text(formatCurrency(total), pageWidth - margin - 4, yPos + 9.5, { align: 'right' })
+
+  yPos += 26
+
+  // 6. Footer Notes & Authorization Stamp
   checkPageBreak(30)
   doc.setFontSize(8)
-  doc.setTextColor(128, 128, 128)
-  doc.setFont('helvetica', 'italic')
-  doc.text('Thank you for your business!', pageWidth / 2, yPos, { align: 'center' })
-  yPos += 5
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(30, 41, 59)
+  doc.text('TERMS & CONDITIONS', margin, yPos)
 
-  if (order.orderNote) {
-    doc.text(`Note: ${order.orderNote}`, pageWidth / 2, yPos, { align: 'center' })
-    yPos += 5
-  }
+  doc.setFontSize(7.5)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(100, 116, 139)
+  yPos += 4
+  doc.text('• Thank you for shopping with us! Please retain this invoice for any return or warranty claims.', margin, yPos)
+  yPos += 4
+  doc.text('• Returns or exchanges are subject to store policy within 7 business days.', margin, yPos)
 
-  // Cashier info
-  const cashierName = order.cashier?.fullName || order.cashier?.email || 'Unknown'
-  doc.text(`Processed by: ${cashierName}`, pageWidth / 2, yPos, { align: 'center' })
-  yPos += 5
+  // Cashier Info Signature area
+  const cashierName = order.cashier?.fullName || order.cashier?.email || 'Authorized Cashier'
+  doc.setFontSize(8)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(30, 41, 59)
+  doc.text(`Processed By: ${cashierName}`, pageWidth - margin, yPos - 4, { align: 'right' })
 
-  // Footer line
-  doc.setDrawColor(200, 200, 200)
-  doc.line(margin, pageHeight - 20, pageWidth - margin, pageHeight - 20)
+  // Page Footer Bar
+  doc.setDrawColor(226, 232, 240)
+  doc.line(margin, pageHeight - 14, pageWidth - margin, pageHeight - 14)
   doc.setFontSize(7)
-  doc.text(
-    `Generated on ${new Date().toLocaleString()}`,
-    pageWidth / 2,
-    pageHeight - 10,
-    { align: 'center' }
-  )
+  doc.setTextColor(148, 163, 184)
+  doc.text(`Bilix POS System • Computer Generated Tax Invoice • ${new Date().toLocaleString('en-IN')}`, pageWidth / 2, pageHeight - 8, { align: 'center' })
 
   return doc
 }
@@ -248,48 +295,6 @@ export const generateInvoicePDF = (order, options = {}) => {
  */
 export const downloadInvoicePDF = (order, filename = null) => {
   const doc = generateInvoicePDF(order)
-  const invoiceFilename = filename || `invoice-${order.id || 'order'}.pdf`
+  const invoiceFilename = filename || `invoice-#${order.id || 'order'}.pdf`
   doc.save(invoiceFilename)
 }
-
-/**
- * Get payment method label
- */
-const getPaymentMethodLabel = (method) => {
-  if (!method) return 'Cash'
-  const methodMap = {
-    CASH: 'Cash',
-    CARD: 'Card',
-    UPI: 'UPI',
-    DEBIT_CARD: 'Debit Card',
-    CREDIT_CARD: 'Credit Card',
-  }
-  return methodMap[method] || method
-}
-
-/**
- * Get status label
- */
-const getStatusLabel = (status) => {
-  if (!status) return 'N/A'
-  const statusMap = {
-    PENDING: 'Pending',
-    COMPLETED: 'Completed',
-    CANCELLED: 'Cancelled',
-    REFUNDED: 'Refunded',
-  }
-  return statusMap[status] || status
-}
-
-/**
- * Format currency
- */
-const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount)
-}
-

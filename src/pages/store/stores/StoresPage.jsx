@@ -171,7 +171,7 @@ const StoresPage = () => {
   if (loading) {
     return (
       <div className="h-full overflow-auto p-4 sm:p-6 flex items-center justify-center">
-        <RefreshCw className="size-8 animate-spin text-muted-foreground" />
+        <RefreshCw className="size-8 animate-spin text-slate-500 dark:text-slate-400" />
       </div>
     )
   }
@@ -182,9 +182,9 @@ const StoresPage = () => {
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-12">
-              <Building2 className="size-16 text-muted-foreground mx-auto mb-4" />
-              <h2 className="text-2xl font-bold mb-2">No Store Found</h2>
-              <p className="text-muted-foreground mb-4">
+              <Building2 className="size-16 text-slate-500 dark:text-slate-400 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">No Store Found</h2>
+              <p className="text-slate-500 dark:text-slate-400 mb-4">
                 You need to create a store first to manage it.
               </p>
               <Button onClick={() => setIsCreateDialogOpen(true)}>
@@ -233,8 +233,8 @@ const StoresPage = () => {
                   rows={3}
                 />
               </div>
-              <div className="pt-4 border-t">
-                <h4 className="font-semibold mb-4">Contact Information</h4>
+              <div className="pt-4 border-t border-slate-200 dark:border-white/10">
+                <h4 className="font-semibold text-slate-900 dark:text-white mb-4">Contact Information</h4>
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="create-address">Address</Label>
@@ -290,8 +290,8 @@ const StoresPage = () => {
     <div className="h-full overflow-auto p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Store Management</h1>
-          <p className="text-muted-foreground mt-1">Manage your store information</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">Store Management</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Manage your store information</p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchStoreInfo}>
           <RefreshCw className="size-4 mr-2" />
@@ -312,29 +312,29 @@ const StoresPage = () => {
         <CardContent className="space-y-6">
           {/* Basic Information */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Basic Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label className="text-muted-foreground">Store Name</Label>
-                <p className="text-lg font-medium mt-1">{storeInfo.brand || 'N/A'}</p>
+                <Label className="text-slate-500 dark:text-slate-400">Store Name</Label>
+                <p className="text-lg font-medium text-slate-900 dark:text-white mt-1">{storeInfo.brand || 'N/A'}</p>
               </div>
               <div>
-                <Label className="text-muted-foreground">Store Type</Label>
+                <Label className="text-slate-500 dark:text-slate-400">Store Type</Label>
                 <p className="mt-1">
-                  <span className="px-2 py-1 rounded text-sm font-medium bg-muted">
+                  <span className="px-2 py-1 rounded text-sm font-medium bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400">
                     {storeInfo.storeType || 'Not specified'}
                   </span>
                 </p>
               </div>
               <div className="md:col-span-2">
-                <Label className="text-muted-foreground">Description</Label>
-                <p className="mt-1">{storeInfo.description || 'No description provided'}</p>
+                <Label className="text-slate-500 dark:text-slate-400">Description</Label>
+                <p className="mt-1 text-slate-900 dark:text-white">{storeInfo.description || 'No description provided'}</p>
               </div>
               {storeInfo.createdAt && (
                 <div>
-                  <Label className="text-muted-foreground">Store Created On</Label>
-                  <p className="mt-1 flex items-center gap-2">
-                    <Calendar className="size-4 text-muted-foreground" />
+                  <Label className="text-slate-500 dark:text-slate-400">Store Created On</Label>
+                  <p className="mt-1 flex items-center gap-2 text-slate-900 dark:text-white">
+                    <Calendar className="size-4 text-slate-500 dark:text-slate-400" />
                     {new Date(storeInfo.createdAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -344,37 +344,37 @@ const StoresPage = () => {
 
           {/* Contact Information */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Contact Information</h3>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Contact Information</h3>
             <div className="space-y-3">
               {storeInfo.contact?.address && (
                 <div className="flex items-start gap-3">
-                  <MapPin className="size-5 text-muted-foreground mt-0.5" />
+                  <MapPin className="size-5 text-slate-500 dark:text-slate-400 mt-0.5" />
                   <div>
-                    <Label className="text-muted-foreground">Address</Label>
-                    <p className="mt-1">{storeInfo.contact.address}</p>
+                    <Label className="text-slate-500 dark:text-slate-400">Address</Label>
+                    <p className="mt-1 text-slate-900 dark:text-white">{storeInfo.contact.address}</p>
                   </div>
                 </div>
               )}
               {storeInfo.contact?.phone && (
                 <div className="flex items-start gap-3">
-                  <Phone className="size-5 text-muted-foreground mt-0.5" />
+                  <Phone className="size-5 text-slate-500 dark:text-slate-400 mt-0.5" />
                   <div>
-                    <Label className="text-muted-foreground">Phone</Label>
-                    <p className="mt-1">{storeInfo.contact.phone}</p>
+                    <Label className="text-slate-500 dark:text-slate-400">Phone</Label>
+                    <p className="mt-1 text-slate-900 dark:text-white">{storeInfo.contact.phone}</p>
                   </div>
                 </div>
               )}
               {storeInfo.contact?.email && (
                 <div className="flex items-start gap-3">
-                  <Mail className="size-5 text-muted-foreground mt-0.5" />
+                  <Mail className="size-5 text-slate-500 dark:text-slate-400 mt-0.5" />
                   <div>
-                    <Label className="text-muted-foreground">Email</Label>
-                    <p className="mt-1">{storeInfo.contact.email}</p>
+                    <Label className="text-slate-500 dark:text-slate-400">Email</Label>
+                    <p className="mt-1 text-slate-900 dark:text-white">{storeInfo.contact.email}</p>
                   </div>
                 </div>
               )}
               {!storeInfo.contact?.address && !storeInfo.contact?.phone && !storeInfo.contact?.email && (
-                <p className="text-muted-foreground">No contact information available</p>
+                <p className="text-slate-500 dark:text-slate-400">No contact information available</p>
               )}
             </div>
           </div>
@@ -420,8 +420,8 @@ const StoresPage = () => {
                 rows={3}
               />
             </div>
-            <div className="pt-4 border-t">
-              <h4 className="font-semibold mb-4">Contact Information</h4>
+            <div className="pt-4 border-t border-slate-200 dark:border-white/10">
+              <h4 className="font-semibold text-slate-900 dark:text-white mb-4">Contact Information</h4>
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="address">Address</Label>

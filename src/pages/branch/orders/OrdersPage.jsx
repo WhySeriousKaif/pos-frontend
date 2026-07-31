@@ -26,27 +26,26 @@ import {
   DialogClose,
 } from '@/components/ui/dialog'
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { Calendar } from '@/components/ui/calendar'
-import {
   Search,
   Eye,
   Printer,
-  CalendarIcon,
   Filter,
-  Download,
   RefreshCw,
   CreditCard,
   DollarSign,
   Smartphone,
   X,
+  ShoppingCart,
+  Download,
+  CheckCircle2,
+  Clock,
+  Ban,
+  FileSpreadsheet,
 } from 'lucide-react'
 import { orderAPI, userAPI } from '@/services/api'
-import { format, startOfToday, startOfWeek, startOfMonth } from 'date-fns'
+import { format, startOfWeek, startOfMonth } from 'date-fns'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
 const OrdersPage = () => {
   const [orders, setOrders] = useState([])
@@ -60,7 +59,6 @@ const OrdersPage = () => {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [branchId, setBranchId] = useState(null)
 
-  // Pagination state
   const [currentPage, setCurrentPage] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
   const [totalElements, setTotalElements] = useState(0)
@@ -72,12 +70,11 @@ const OrdersPage = () => {
 
   useEffect(() => {
     if (branchId) {
-      setCurrentPage(0) // Reset to first page on filter change
-      fetchOrders(0) // Fetch first page
+      setCurrentPage(0)
+      fetchOrders(0)
     }
   }, [branchId, dateFilter, statusFilter, paymentFilter])
 
-  // Effect for page changes (when user clicks next/prev)
   useEffect(() => {
     if (branchId) {
       fetchOrders(currentPage)
@@ -93,9 +90,12 @@ const OrdersPage = () => {
       const profile = await userAPI.getProfile()
       if (profile?.branchId) {
         setBranchId(profile.branchId)
+      } else {
+        setBranchId(1)
       }
     } catch (error) {
       console.error('Error fetching branch ID:', error)
+      setBranchId(1)
     }
   }
 
@@ -105,48 +105,41 @@ const OrdersPage = () => {
   }
 
   const fetchOrders = async (page = 0) => {
-    if (!branchId) return;
-
     try {
       setLoading(true)
       let allOrders = []
 
-      // Use Paged API only if looking at "All Time" with no other filters
-      // This prevents loading massive datasets
       const isAllTime = dateFilter === 'all'
       const isNoFilters = statusFilter === 'all' && paymentFilter === 'all'
 
-      if (isAllTime && isNoFilters) {
+      if (isAllTime && isNoFilters && branchId) {
         const response = await orderAPI.getByBranchPaged(branchId, page, pageSize)
-        // response.content contains the list, response has page stats
         allOrders = response.content || []
         setTotalPages(response.totalPages || 0)
         setTotalElements(response.totalElements || 0)
       } else {
-        // Use existing endpoints for specific filters
-        // These don't support backend pagination yet, but result sets should be smaller
-        setTotalPages(0) // Disable pagination UI for filtered views
+        setTotalPages(0)
 
-        if (dateFilter === 'today') {
-          allOrders = await orderAPI.getTodayByBranch(branchId)
-        } else {
+        if (dateFilter === 'today' && branchId) {
+          allOrders = await orderAPI.getTodayByBranch(branchId).catch(() => [])
+        } else if (branchId) {
           const filters = {}
           if (statusFilter !== 'all') filters.orderStatus = statusFilter
           if (paymentFilter !== 'all') filters.paymentType = paymentFilter
-          allOrders = await orderAPI.getByBranch(branchId, filters)
+          allOrders = await orderAPI.getByBranch(branchId, filters).catch(() => [])
+        } else {
+          allOrders = await orderAPI.getAll().catch(() => [])
         }
 
-        // Client-side date filtering for week/month
         let filtered = allOrders || []
         if (dateFilter === 'week') {
           const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 })
-          filtered = filtered.filter(order => new Date(order.createdAt) >= weekStart)
+          filtered = filtered.filter(order => order.createdAt && new Date(order.createdAt) >= weekStart)
         } else if (dateFilter === 'month') {
           const monthStart = startOfMonth(new Date())
-          filtered = filtered.filter(order => new Date(order.createdAt) >= monthStart)
+          filtered = filtered.filter(order => order.createdAt && new Date(order.createdAt) >= monthStart)
         }
 
-        // Client-side filtering for combinations not handled by backend
         if (!isAllTime) {
           if (statusFilter !== 'all' && dateFilter !== 'today') {
             filtered = filtered.filter(order => order.status === statusFilter)
@@ -156,14 +149,14 @@ const OrdersPage = () => {
           }
         }
 
-        // Sort client-side for non-paged results
-        filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        filtered.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
         allOrders = filtered
       }
 
       setOrders(allOrders)
     } catch (error) {
       console.error('Error fetching orders:', error)
+      toast.error('Failed to load orders')
       setOrders([])
     } finally {
       setLoading(false)
@@ -171,7 +164,6 @@ const OrdersPage = () => {
   }
 
   const filterOrders = () => {
-    // Client-side search (applies to the current "page" of fetched orders)
     if (!searchQuery.trim()) {
       setFilteredOrders(orders)
       return
@@ -183,14 +175,10 @@ const OrdersPage = () => {
       const customerName = typeof order.customer === 'string'
         ? order.customer
         : (order.customer?.name || order.customer?.fullName || 'Walk-in')
-      const customerEmail = typeof order.customer === 'object' ? (order.customer?.email || '') : ''
-      const customerPhone = typeof order.customer === 'object' ? (order.customer?.phone || '') : ''
 
       return (
         orderId.includes(query) ||
-        customerName.toLowerCase().includes(query) ||
-        customerEmail.toLowerCase().includes(query) ||
-        customerPhone.toLowerCase().includes(query)
+        customerName.toLowerCase().includes(query)
       )
     })
     setFilteredOrders(filtered)
@@ -203,29 +191,38 @@ const OrdersPage = () => {
       setIsViewDialogOpen(true)
     } catch (error) {
       console.error('Error fetching order details:', error)
+      const found = orders.find(o => o.id === orderId)
+      if (found) {
+        setSelectedOrder(found)
+        setIsViewDialogOpen(true)
+      } else {
+        toast.error('Could not retrieve order details')
+      }
     }
   }
 
   const handlePrintOrder = async (order) => {
     try {
+      toast.info('Generating PDF receipt...')
       const { downloadInvoicePDF } = await import('@/utils/invoiceGenerator')
       downloadInvoicePDF(order)
+      toast.success('Invoice generated successfully!')
     } catch (error) {
       console.error('Error generating PDF invoice:', error)
-      alert('Failed to generate invoice. Please try again.')
+      toast.error('Failed to generate PDF invoice')
     }
   }
 
   const getPaymentIcon = (type) => {
     switch (type) {
       case 'CARD':
-        return <CreditCard className="size-4" />
+        return <CreditCard className="size-3.5 text-blue-600" />
       case 'CASH':
-        return <DollarSign className="size-4" />
+        return <DollarSign className="size-3.5 text-emerald-600" />
       case 'UPI':
-        return <Smartphone className="size-4" />
+        return <Smartphone className="size-3.5 text-purple-600" />
       default:
-        return null
+        return <DollarSign className="size-3.5 text-slate-500" />
     }
   }
 
@@ -236,56 +233,63 @@ const OrdersPage = () => {
   }
 
   return (
-    <div className="h-full overflow-auto p-4 sm:p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div>
-          <h1 className="text-3xl font-bold">Orders</h1>
-          <p className="text-muted-foreground mt-1">Manage and view all branch orders</p>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Branch Orders</h1>
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
+              {filteredOrders.length} Orders
+            </span>
+          </div>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Track and manage branch customer transactions, receipts, and order histories.</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => fetchOrders(currentPage)}>
-          <RefreshCw className="size-4 mr-2" /> Refresh
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="default"
+            onClick={() => fetchOrders(currentPage)}
+            className="text-sm font-bold border-slate-200 dark:border-slate-700 h-10 px-4 gap-2 cursor-pointer"
+          >
+            <RefreshCw className="size-4" /> Refresh
+          </Button>
+        </div>
       </div>
 
-      {/* Filters */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Filter className="size-5" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Filters Card */}
+      <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
               <Input
                 type="text"
-                placeholder="Search orders..."
+                placeholder="Search order # or customer..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 text-sm h-10 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
               />
             </div>
 
             <Select value={dateFilter} onValueChange={setDateFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="h-10 text-sm bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                 <SelectValue placeholder="Date Range" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="today">Today</SelectItem>
+                <SelectItem value="today">Today's Orders</SelectItem>
                 <SelectItem value="week">This Week</SelectItem>
                 <SelectItem value="month">This Month</SelectItem>
-                <SelectItem value="all">All Time (Paged)</SelectItem>
+                <SelectItem value="all">All Time</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="h-10 text-sm bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="COMPLETED">Completed</SelectItem>
                 <SelectItem value="PENDING">Pending</SelectItem>
                 <SelectItem value="CANCELLED">Cancelled</SelectItem>
@@ -293,11 +297,11 @@ const OrdersPage = () => {
             </Select>
 
             <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="h-10 text-sm bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                 <SelectValue placeholder="Payment" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Payment</SelectItem>
+                <SelectItem value="all">All Payments</SelectItem>
                 <SelectItem value="CASH">Cash</SelectItem>
                 <SelectItem value="CARD">Card</SelectItem>
                 <SelectItem value="UPI">UPI</SelectItem>
@@ -308,113 +312,112 @@ const OrdersPage = () => {
       </Card>
 
       {/* Orders Table */}
-      <Card>
+      <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
         <CardContent className="p-0">
           {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <RefreshCw className="size-8 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center p-16 space-y-3 flex-col">
+              <div className="size-9 rounded-full border-4 border-blue-600 border-t-transparent animate-spin" />
+              <p className="text-sm font-semibold text-slate-500">Loading branch orders...</p>
             </div>
           ) : filteredOrders.length === 0 ? (
-            <div className="flex items-center justify-center h-64">
-              <p className="text-muted-foreground">
-                {searchQuery ? 'No orders found matching your search' : 'No orders available'}
-              </p>
+            <div className="flex flex-col items-center justify-center p-16 text-center">
+              <ShoppingCart className="size-14 text-slate-300 dark:text-slate-700 mb-3" />
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">No Orders Found</h3>
+              <p className="text-sm text-slate-500 mt-1 max-w-sm">No orders match your selected filter options or search term.</p>
             </div>
           ) : (
             <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Order ID</TableHead>
-                    <TableHead>Date/Time</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Payment</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOrders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">#{order.id}</TableCell>
-                      <TableCell>{formatDateTime(order.createdAt)}</TableCell>
-                      <TableCell>
-                        {typeof order.customer === 'string'
-                          ? order.customer
-                          : (order.customer?.name || order.customer?.fullName || 'Walk-in')}
-                      </TableCell>
-                      <TableCell className="text-right font-semibold">
-                        ₹{order.totalAmount?.toFixed(2) || '0.00'}
-                      </TableCell>
-                      <TableCell>
-                        <span className="inline-flex items-center gap-1">
-                          {getPaymentIcon(order.paymentType)}
-                          {order.paymentType || 'N/A'}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={cn(
-                            'px-2 py-1 rounded text-xs font-medium',
-                            order.status === 'COMPLETED' && 'bg-green-100 text-green-800',
-                            order.status === 'PENDING' && 'bg-yellow-100 text-yellow-800',
-                            order.status === 'CANCELLED' && 'bg-red-100 text-red-800',
-                            !order.status && 'bg-gray-100 text-gray-800'
-                          )}
-                        >
-                          {order.status || 'N/A'}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() => handleViewOrder(order.id)}
-                            title="View Order"
-                          >
-                            <Eye className="size-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() => handlePrintOrder(order)}
-                            title="Print Order"
-                          >
-                            <Printer className="size-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-slate-50 dark:bg-slate-800/60">
+                    <TableRow className="border-slate-100 dark:border-slate-800">
+                      <TableHead className="py-4 text-sm font-bold text-slate-800 dark:text-slate-200">Order ID</TableHead>
+                      <TableHead className="py-4 text-sm font-bold text-slate-800 dark:text-slate-200">Date & Time</TableHead>
+                      <TableHead className="py-4 text-sm font-bold text-slate-800 dark:text-slate-200">Customer</TableHead>
+                      <TableHead className="py-4 text-sm font-bold text-slate-800 dark:text-slate-200 text-right">Amount</TableHead>
+                      <TableHead className="py-4 text-sm font-bold text-slate-800 dark:text-slate-200">Payment</TableHead>
+                      <TableHead className="py-4 text-sm font-bold text-slate-800 dark:text-slate-200">Status</TableHead>
+                      <TableHead className="py-4 text-sm font-bold text-slate-800 dark:text-slate-200 text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {filteredOrders.map((order) => (
+                      <TableRow key={order.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                        <TableCell className="py-4 font-bold text-sm text-blue-600 dark:text-blue-400">#{order.id}</TableCell>
+                        <TableCell className="py-4 text-sm text-slate-600 dark:text-slate-300">{formatDateTime(order.createdAt)}</TableCell>
+                        <TableCell className="py-4 text-sm font-bold text-slate-900 dark:text-white">
+                          {typeof order.customer === 'string'
+                            ? order.customer
+                            : (order.customer?.name || order.customer?.fullName || 'Walk-in Customer')}
+                        </TableCell>
+                        <TableCell className="py-4 text-right text-sm font-black text-slate-900 dark:text-white">
+                          ₹{order.totalAmount?.toFixed(2) || '0.00'}
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                            {getPaymentIcon(order.paymentType)}
+                            {order.paymentType || 'CASH'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                            <CheckCircle2 className="size-3.5" />
+                            {order.status || 'COMPLETED'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-9 text-slate-600 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 cursor-pointer"
+                              onClick={() => handleViewOrder(order)}
+                              title="View Details"
+                            >
+                              <Eye className="size-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-9 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 cursor-pointer"
+                              onClick={() => handlePrintOrder(order)}
+                              title="Print Receipt"
+                            >
+                              <Printer className="size-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
 
-              {/* Pagination Controls */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-end p-4 gap-2 border-t">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 0}
-                  >
-                    Previous
-                  </Button>
-                  <span className="text-sm text-muted-foreground">
-                    Page {currentPage + 1} of {totalPages}
+                <div className="flex items-center justify-between p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                  <span className="text-xs text-slate-500">
+                    Showing page <span className="font-bold">{currentPage + 1}</span> of <span className="font-bold">{totalPages}</span>
                   </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages - 1}
-                  >
-                    Next
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 0}
+                      className="text-xs h-8"
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages - 1}
+                      className="text-xs h-8"
+                    >
+                      Next
+                    </Button>
+                  </div>
                 </div>
               )}
             </>
@@ -422,105 +425,86 @@ const OrdersPage = () => {
         </CardContent>
       </Card>
 
-      {/* Order Details Dialog */}
+      {/* View Order Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
-          <DialogHeader className="p-6 pb-4 border-b flex flex-row items-center justify-between">
+        <DialogContent className="max-w-2xl bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-6">
+          <DialogHeader className="pb-4 border-b border-slate-100 dark:border-slate-800 flex flex-row items-center justify-between">
             <div>
-              <DialogTitle className="text-2xl font-bold">
-                Order Details #{selectedOrder?.id}
-              </DialogTitle>
-              <DialogDescription className="text-sm text-muted-foreground">
-                {formatDateTime(selectedOrder?.createdAt)}
+              <DialogTitle className="text-xl font-black text-slate-900 dark:text-white">Order #{selectedOrder?.id}</DialogTitle>
+              <DialogDescription className="text-xs text-slate-500">
+                {selectedOrder?.createdAt ? formatDateTime(selectedOrder.createdAt) : 'Transaction Details'}
               </DialogDescription>
             </div>
-            <DialogClose asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogClose>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => selectedOrder && handlePrintOrder(selectedOrder)}
+              className="text-xs font-bold gap-1.5"
+            >
+              <Printer className="size-3.5" /> Download PDF
+            </Button>
           </DialogHeader>
 
           {selectedOrder && (
-            <div className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Order Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-sm space-y-1">
-                    <p><strong>Date:</strong> {formatDateTime(selectedOrder.createdAt)}</p>
-                    <p><strong>Status:</strong>
-                      <span
-                        className={cn(
-                          'ml-2 px-2 py-1 rounded text-xs font-medium',
-                          selectedOrder.status === 'COMPLETED' && 'bg-green-100 text-green-800',
-                          selectedOrder.status === 'PENDING' && 'bg-yellow-100 text-yellow-800',
-                          selectedOrder.status === 'CANCELLED' && 'bg-red-100 text-red-800'
-                        )}
-                      >
-                        {selectedOrder.status || 'N/A'}
-                      </span>
-                    </p>
-                    <p><strong>Payment:</strong> {selectedOrder.paymentType || 'N/A'}</p>
-                    <p className="text-lg font-bold mt-2">
-                      <strong>Total:</strong> ₹{selectedOrder.totalAmount?.toFixed(2) || '0.00'}
-                    </p>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Customer Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-sm space-y-1">
-                    <p><strong>Name:</strong>{' '}
-                      {typeof selectedOrder.customer === 'string'
-                        ? selectedOrder.customer
-                        : (selectedOrder.customer?.name || selectedOrder.customer?.fullName || 'Walk-in')}
-                    </p>
-                    {typeof selectedOrder.customer === 'object' && selectedOrder.customer?.phone && (
-                      <p><strong>Phone:</strong> {selectedOrder.customer.phone}</p>
-                    )}
-                    {typeof selectedOrder.customer === 'object' && selectedOrder.customer?.email && (
-                      <p><strong>Email:</strong> {selectedOrder.customer.email}</p>
-                    )}
-                  </CardContent>
-                </Card>
+            <div className="space-y-6 pt-4">
+              <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800 text-xs">
+                <div>
+                  <span className="text-slate-400 font-medium">Customer</span>
+                  <p className="font-bold text-slate-900 dark:text-white mt-0.5">
+                    {typeof selectedOrder.customer === 'string'
+                      ? selectedOrder.customer
+                      : (selectedOrder.customer?.name || selectedOrder.customer?.fullName || 'Walk-in Customer')}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-slate-400 font-medium">Payment Method</span>
+                  <p className="font-bold text-slate-900 dark:text-white mt-0.5">{selectedOrder.paymentType || 'CASH'}</p>
+                </div>
+                <div>
+                  <span className="text-slate-400 font-medium">Status</span>
+                  <p className="font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{selectedOrder.status || 'COMPLETED'}</p>
+                </div>
+                <div>
+                  <span className="text-slate-400 font-medium">Grand Total</span>
+                  <p className="font-black text-sm text-slate-900 dark:text-white mt-0.5">₹{selectedOrder.totalAmount?.toFixed(2) || '0.00'}</p>
+                </div>
               </div>
 
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Order Items</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
+              <div>
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Items Purchased</h4>
+                <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
                   <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-slate-50 dark:bg-slate-800/40">
                       <TableRow>
-                        <TableHead>Item</TableHead>
-                        <TableHead className="text-right">Quantity</TableHead>
-                        <TableHead className="text-right">Price</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
+                        <TableHead className="text-xs font-bold">Item</TableHead>
+                        <TableHead className="text-xs font-bold text-right">Qty</TableHead>
+                        <TableHead className="text-xs font-bold text-right">Price</TableHead>
+                        <TableHead className="text-xs font-bold text-right">Total</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
-                      {selectedOrder.orderItems?.map((item, index) => (
-                        <TableRow key={index}>
-                          <TableCell>
-                            <p className="font-medium">{item.product?.name || 'N/A'}</p>
-                            <p className="text-xs text-muted-foreground">SKU: {item.product?.sku || 'N/A'}</p>
-                          </TableCell>
-                          <TableCell className="text-right">{item.quantity}</TableCell>
-                          <TableCell className="text-right">₹{item.price?.toFixed(2) || '0.00'}</TableCell>
-                          <TableCell className="text-right">
-                            ₹{((item.price || 0) * (item.quantity || 0)).toFixed(2)}
+                    <TableBody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {selectedOrder.orderItems && selectedOrder.orderItems.length > 0 ? (
+                        selectedOrder.orderItems.map((item, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell className="text-xs font-bold text-slate-900 dark:text-white">
+                              {item.product?.name || item.name || 'Branch Product'}
+                            </TableCell>
+                            <TableCell className="text-xs text-right">{item.quantity || 1}</TableCell>
+                            <TableCell className="text-xs text-right">₹{(item.price || 0).toFixed(2)}</TableCell>
+                            <TableCell className="text-xs text-right font-bold">₹{((item.price || 0) * (item.quantity || 1)).toFixed(2)}</TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-xs text-center p-4 text-slate-500">
+                            Standard POS Sale Record
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )}
                     </TableBody>
                   </Table>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
           )}
         </DialogContent>
@@ -528,5 +512,7 @@ const OrdersPage = () => {
     </div>
   )
 }
+
 export default OrdersPage
+
 

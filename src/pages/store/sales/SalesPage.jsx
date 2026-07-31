@@ -334,7 +334,7 @@ const SalesPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <RefreshCw className="size-8 animate-spin text-muted-foreground" />
+        <RefreshCw className="size-8 animate-spin text-slate-500 dark:text-slate-400" />
       </div>
     )
   }
@@ -343,8 +343,8 @@ const SalesPage = () => {
     <div className="h-full overflow-auto p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Sales Management</h1>
-          <p className="text-muted-foreground mt-1">View and manage all sales transactions</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">Sales Management</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">View and manage all sales transactions</p>
         </div>
         <Button>
           <Store className="size-4 mr-2" />
@@ -358,9 +358,9 @@ const SalesPage = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Sales</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Sales</p>
                 <p className="text-2xl font-bold mt-1">{formatCurrency(stats.totalSales)}</p>
-                <p className="text-xs text-muted-foreground mt-1">+0% from last week</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">+0% from last week</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
                 <DollarSign className="size-6 text-green-600" />
@@ -373,9 +373,9 @@ const SalesPage = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Orders Today</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Orders Today</p>
                 <p className="text-2xl font-bold mt-1">{stats.ordersToday}</p>
-                <p className="text-xs text-muted-foreground mt-1">+0% from yesterday</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">+0% from yesterday</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
                 <ShoppingCart className="size-6 text-blue-600" />
@@ -388,9 +388,9 @@ const SalesPage = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Active Cashiers</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Active Cashiers</p>
                 <p className="text-2xl font-bold mt-1">{stats.activeCashiers}</p>
-                <p className="text-xs text-muted-foreground mt-1">Same as yesterday</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Same as yesterday</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
                 <Users className="size-6 text-purple-600" />
@@ -403,9 +403,9 @@ const SalesPage = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Avg. Order Value</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Avg. Order Value</p>
                 <p className="text-2xl font-bold mt-1">{formatCurrency(stats.avgOrderValue)}</p>
-                <p className="text-xs text-muted-foreground mt-1">+0% from last week</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">+0% from last week</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
                 <TrendingUp className="size-6 text-orange-600" />
@@ -467,7 +467,7 @@ const SalesPage = () => {
             <CardTitle>Sales Report</CardTitle>
             <div className="flex flex-wrap gap-2 w-full sm:w-auto">
               <div className="relative flex-1 sm:flex-initial sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-500 dark:text-slate-400" />
                 <Input
                   type="text"
                   placeholder="Search by customer or cashier..."
@@ -508,7 +508,7 @@ const SalesPage = () => {
         </CardHeader>
         <CardContent>
           {filteredOrders.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
+            <div className="text-center py-12 text-slate-500 dark:text-slate-400">
               <ShoppingCart className="size-12 mx-auto mb-2 opacity-50" />
               <p>No sales found</p>
             </div>

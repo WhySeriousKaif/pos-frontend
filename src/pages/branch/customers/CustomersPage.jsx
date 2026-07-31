@@ -27,8 +27,11 @@ import {
   ShoppingCart,
   Mail,
   Phone,
+  UserCheck,
+  TrendingUp,
 } from 'lucide-react'
 import { customerAPI, orderAPI } from '@/services/api'
+import { toast } from 'sonner'
 
 const CustomersPage = () => {
   const [customers, setCustomers] = useState([])
@@ -53,12 +56,11 @@ const CustomersPage = () => {
   const fetchCustomers = async () => {
     try {
       setLoading(true)
-      const data = await customerAPI.getAll()
-      // Fetch order counts for each customer
+      const data = await customerAPI.getAll().catch(() => [])
       const customersWithOrders = await Promise.all(
         (data || []).map(async (customer) => {
           try {
-            const orders = await orderAPI.getByCustomerId(customer.id)
+            const orders = await orderAPI.getByCustomerId(customer.id).catch(() => [])
             return {
               ...customer,
               orderCount: orders?.length || 0,
@@ -76,6 +78,7 @@ const CustomersPage = () => {
       setCustomers(customersWithOrders)
     } catch (error) {
       console.error('Error fetching customers:', error)
+      toast.error('Failed to load customers')
       setCustomers([])
     } finally {
       setLoading(false)
@@ -106,7 +109,7 @@ const CustomersPage = () => {
   const handleAddCustomer = async () => {
     try {
       if (!newCustomer.name) {
-        alert('Name is required')
+        toast.error('Customer name is required')
         return
       }
       
@@ -114,10 +117,10 @@ const CustomersPage = () => {
       setIsAddDialogOpen(false)
       setNewCustomer({ name: '', email: '', phone: '' })
       fetchCustomers()
-      alert('Customer added successfully!')
+      toast.success('Customer added successfully!')
     } catch (error) {
       console.error('Error adding customer:', error)
-      alert(`Error adding customer: ${error.message}`)
+      toast.error('Failed to add customer')
     }
   }
 
@@ -128,180 +131,201 @@ const CustomersPage = () => {
   }
 
   return (
-    <div className="h-full overflow-auto p-4 sm:p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div>
-          <h1 className="text-3xl font-bold">Customers</h1>
-          <p className="text-muted-foreground mt-1">Manage branch customers</p>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Branch Customers</h1>
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-300">
+              {customers.length} Registered
+            </span>
+          </div>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Directory of clients, purchase histories, contact info, and total spend.</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setIsAddDialogOpen(true)}>
-            <Plus className="size-4 mr-2" /> Add Customer
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={() => setIsAddDialogOpen(true)}
+            size="default"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm h-10 px-4 gap-2 shadow-sm cursor-pointer"
+          >
+            <Plus className="size-4" /> Add Customer
           </Button>
-          <Button variant="outline" size="sm" onClick={fetchCustomers}>
-            <RefreshCw className="size-4 mr-2" /> Refresh
+          <Button
+            variant="outline"
+            size="default"
+            onClick={fetchCustomers}
+            className="text-sm font-bold border-slate-200 dark:border-slate-700 h-10 px-4 gap-2 cursor-pointer"
+          >
+            <RefreshCw className="size-4" /> Refresh
           </Button>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-            <Users className="size-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{summary.total}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
+          <CardContent className="p-6 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Customers</p>
+              <div className="text-3xl font-black text-slate-900 dark:text-white mt-1.5">{summary.total}</div>
+            </div>
+            <div className="size-12 rounded-xl bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center text-violet-600">
+              <Users className="size-6" />
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Customers</CardTitle>
-            <ShoppingCart className="size-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{summary.withOrders}</div>
-            <p className="text-xs text-muted-foreground mt-1">With orders</p>
+        <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
+          <CardContent className="p-6 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Repeat Buyers</p>
+              <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1.5">{summary.withOrders}</div>
+            </div>
+            <div className="size-12 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+              <UserCheck className="size-6" />
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <Mail className="size-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              ₹{summary.totalRevenue.toFixed(2)}
+        <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
+          <CardContent className="p-6 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Lifetime Customer Value</p>
+              <div className="text-3xl font-black text-blue-600 dark:text-blue-400 mt-1.5">₹{summary.totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+            </div>
+            <div className="size-12 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600">
+              <TrendingUp className="size-6" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search */}
-      <Card className="mb-6">
-        <CardContent className="pt-6">
+      {/* Search Bar */}
+      <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
+        <CardContent className="p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
             <Input
               type="text"
-              placeholder="Search by name, email, or phone..."
+              placeholder="Search customer name, email or phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-11 h-11 text-sm bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
             />
           </div>
         </CardContent>
       </Card>
 
-      {/* Customers Table */}
-      <Card>
+      {/* Table */}
+      <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
         <CardContent className="p-0">
           {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <RefreshCw className="size-8 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center p-16 space-y-3 flex-col">
+              <div className="size-9 rounded-full border-4 border-blue-600 border-t-transparent animate-spin" />
+              <p className="text-sm font-semibold text-slate-500">Loading branch customers...</p>
             </div>
           ) : filteredCustomers.length === 0 ? (
-            <div className="flex items-center justify-center h-64">
-              <p className="text-muted-foreground">
-                {searchQuery ? 'No customers found' : 'No customers available'}
-              </p>
+            <div className="flex flex-col items-center justify-center p-16 text-center">
+              <Users className="size-14 text-slate-300 dark:text-slate-700 mb-3" />
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">No Customers Found</h3>
+              <p className="text-sm text-slate-500 mt-1 max-w-sm">No customers match your search term.</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Orders</TableHead>
-                  <TableHead className="text-right">Total Spent</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCustomers.map((customer) => (
-                  <TableRow key={customer.id}>
-                    <TableCell className="font-medium">
-                      {customer.name || customer.fullName || 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Mail className="size-3 text-muted-foreground" />
-                        {customer.email || 'N/A'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Phone className="size-3 text-muted-foreground" />
-                        {customer.phone || 'N/A'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="px-2 py-1 rounded text-xs font-medium bg-muted">
-                        {customer.orderCount || 0}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      ₹{(customer.totalSpent || 0).toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" className="h-8">
-                        <Edit className="size-4" />
-                      </Button>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-slate-50 dark:bg-slate-800/60">
+                  <TableRow className="border-slate-100 dark:border-slate-800">
+                    <TableHead className="py-4 text-sm font-bold text-slate-800 dark:text-slate-200">Customer</TableHead>
+                    <TableHead className="py-4 text-sm font-bold text-slate-800 dark:text-slate-200">Email Address</TableHead>
+                    <TableHead className="py-4 text-sm font-bold text-slate-800 dark:text-slate-200">Phone</TableHead>
+                    <TableHead className="py-4 text-sm font-bold text-slate-800 dark:text-slate-200">Orders</TableHead>
+                    <TableHead className="py-4 text-sm font-bold text-slate-800 dark:text-slate-200 text-right">Total Spent</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {filteredCustomers.map((customer) => (
+                    <TableRow key={customer.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                      <TableCell className="py-4 font-bold text-sm text-slate-900 dark:text-white flex items-center gap-3">
+                        <div className="size-10 rounded-full bg-gradient-to-tr from-violet-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow">
+                          {(customer.name || customer.fullName || 'C')[0]?.toUpperCase()}
+                        </div>
+                        <span className="text-sm font-bold">{customer.name || customer.fullName || 'Customer'}</span>
+                      </TableCell>
+                      <TableCell className="py-4 text-sm text-slate-600 dark:text-slate-300">
+                        <span className="inline-flex items-center gap-2">
+                          <Mail className="size-4 text-slate-400" />
+                          {customer.email || 'N/A'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-4 text-sm text-slate-600 dark:text-slate-300">
+                        <span className="inline-flex items-center gap-2">
+                          <Phone className="size-4 text-slate-400" />
+                          {customer.phone || 'N/A'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                          {customer.orderCount || 0} Orders
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-4 text-right text-sm font-black text-slate-900 dark:text-white">
+                        ₹{(customer.totalSpent || 0).toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
 
       {/* Add Customer Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-6">
           <DialogHeader>
-            <DialogTitle>Add Customer</DialogTitle>
-            <DialogDescription>
-              Add a new customer to the system
-            </DialogDescription>
+            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white">Add New Customer</DialogTitle>
+            <DialogDescription className="text-sm text-slate-500">Create a customer profile for branch checkout records.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Name *</label>
+          <div className="space-y-4 py-3 text-sm">
+            <div className="space-y-1.5">
+              <label className="font-bold text-slate-700 dark:text-slate-300">Full Name *</label>
               <Input
-                placeholder="Enter customer name"
+                placeholder="Customer full name"
                 value={newCustomer.name}
                 onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+                className="h-10 text-sm"
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
+            <div className="space-y-1.5">
+              <label className="font-bold text-slate-700 dark:text-slate-300">Email Address</label>
               <Input
                 type="email"
-                placeholder="Enter email address"
+                placeholder="customer@example.com"
                 value={newCustomer.email}
                 onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                className="h-10 text-sm"
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Phone</label>
+            <div className="space-y-1.5">
+              <label className="font-bold text-slate-700 dark:text-slate-300">Phone Number</label>
               <Input
                 type="tel"
-                placeholder="Enter phone number"
+                placeholder="+91 9876543210"
                 value={newCustomer.phone}
                 onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                className="h-10 text-sm"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+          <DialogFooter className="pt-3">
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} className="text-sm font-bold h-10 px-4">
               Cancel
             </Button>
-            <Button onClick={handleAddCustomer}>Add Customer</Button>
+            <Button onClick={handleAddCustomer} className="text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white h-10 px-4">
+              Add Customer
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -310,4 +334,6 @@ const CustomersPage = () => {
 }
 
 export default CustomersPage
+
+
 

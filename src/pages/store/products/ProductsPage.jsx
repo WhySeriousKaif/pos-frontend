@@ -507,8 +507,8 @@ const ProductsPage = () => {
     <div className="h-full overflow-auto p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Product Management</h1>
-          <p className="text-muted-foreground mt-1">Manage your store products</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">Product Management</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Manage your store products</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={fetchProducts}>
@@ -527,7 +527,7 @@ const ProductsPage = () => {
         <CardContent className="pt-6">
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-500 dark:text-slate-400" />
               <Input
                 type="text"
                 placeholder="Search products..."
@@ -549,12 +549,12 @@ const ProductsPage = () => {
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <RefreshCw className="size-8 animate-spin text-muted-foreground" />
+              <RefreshCw className="size-8 animate-spin text-slate-500 dark:text-slate-400" />
             </div>
           ) : filteredProducts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <ImageIcon className="size-16 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">
+              <ImageIcon className="size-16 text-slate-500 dark:text-slate-400 mb-4" />
+              <p className="text-slate-500 dark:text-slate-400">
                 {searchQuery ? 'No products found matching your search' : 'No products available'}
               </p>
             </div>
@@ -577,7 +577,7 @@ const ProductsPage = () => {
                     <TableRow key={product.id}>
                       <TableCell className="font-medium">#{product.id}</TableCell>
                       <TableCell>
-                        <div className="size-16 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+                        <div className="size-16 rounded-md overflow-hidden bg-slate-100 dark:bg-white/10 flex items-center justify-center">
                           <img
                             src={getProductImage(product)}
                             alt={product.name}
@@ -590,22 +590,22 @@ const ProductsPage = () => {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{product.name || 'N/A'}</p>
-                          <p className="text-sm text-muted-foreground line-clamp-2">
+                          <p className="font-medium text-slate-900 dark:text-white">{product.name || 'N/A'}</p>
+                          <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
                             {product.description || 'No description'}
                           </p>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="px-2 py-1 rounded text-xs font-medium bg-muted">
+                        <span className="px-2 py-1 rounded text-xs font-medium bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white">
                           {product.category?.name || 'Uncategorized'}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right font-semibold">
+                      <TableCell className="text-right font-semibold text-slate-900 dark:text-white">
                         ₹{product.sellingPrice?.toFixed(2) || product.price?.toFixed(2) || '0.00'}
                       </TableCell>
                       <TableCell className="text-right">
-                        <span className="px-2 py-1 rounded text-xs font-medium bg-muted">
+                        <span className="px-2 py-1 rounded text-xs font-medium bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white">
                           {product.quantity || product.stockQuantity || 0}
                         </span>
                       </TableCell>
@@ -630,7 +630,7 @@ const ProductsPage = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                            className="h-8 w-8 p-0 text-red-600 dark:text-red-400 hover:text-red-600 dark:hover:text-red-400"
                             onClick={() => handleDeleteProduct(product.id)}
                           >
                             <Trash2 className="size-4" />
@@ -656,7 +656,7 @@ const ProductsPage = () => {
           {selectedProduct && (
             <div className="space-y-4">
               <div className="flex gap-4">
-                <div className="size-32 rounded-md overflow-hidden bg-muted shrink-0">
+                <div className="size-32 rounded-md overflow-hidden bg-slate-100 dark:bg-white/10 shrink-0">
                   <img
                     src={getProductImage(selectedProduct)}
                     alt={selectedProduct.name}
@@ -664,31 +664,31 @@ const ProductsPage = () => {
                   />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold">{selectedProduct.name}</h3>
-                  <p className="text-muted-foreground mt-1">{selectedProduct.description}</p>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">{selectedProduct.name}</h3>
+                  <p className="text-slate-500 dark:text-slate-400 mt-1">{selectedProduct.description}</p>
                   <div className="mt-4 space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Price:</span>
-                      <span className="font-semibold">₹{selectedProduct.sellingPrice?.toFixed(2) || selectedProduct.price?.toFixed(2) || '0.00'}</span>
+                      <span className="text-slate-500 dark:text-slate-400">Price:</span>
+                      <span className="font-semibold text-slate-900 dark:text-white">₹{selectedProduct.sellingPrice?.toFixed(2) || selectedProduct.price?.toFixed(2) || '0.00'}</span>
                     </div>
                     {selectedProduct.mrp && (
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">MRP:</span>
-                        <span className="line-through text-muted-foreground">₹{selectedProduct.mrp.toFixed(2)}</span>
+                        <span className="text-slate-500 dark:text-slate-400">MRP:</span>
+                        <span className="line-through text-slate-500 dark:text-slate-400">₹{selectedProduct.mrp.toFixed(2)}</span>
                       </div>
                     )}
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Category:</span>
-                      <span>{selectedProduct.category?.name || 'Uncategorized'}</span>
+                      <span className="text-slate-500 dark:text-slate-400">Category:</span>
+                      <span className="text-slate-900 dark:text-white">{selectedProduct.category?.name || 'Uncategorized'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Stock:</span>
-                      <span>{selectedProduct.quantity || selectedProduct.stockQuantity || 0}</span>
+                      <span className="text-slate-500 dark:text-slate-400">Stock:</span>
+                      <span className="text-slate-900 dark:text-white">{selectedProduct.quantity || selectedProduct.stockQuantity || 0}</span>
                     </div>
                     {selectedProduct.sku && (
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">SKU:</span>
-                        <span>{selectedProduct.sku}</span>
+                        <span className="text-slate-500 dark:text-slate-400">SKU:</span>
+                        <span className="text-slate-900 dark:text-white">{selectedProduct.sku}</span>
                       </div>
                     )}
                   </div>
@@ -834,7 +834,7 @@ const ProductsPage = () => {
                 <div className="mt-1 space-y-2">
                   {imagePreview || newProduct.image ? (
                     <div className="flex items-center gap-4">
-                      <div className="size-24 rounded-md overflow-hidden bg-muted border">
+                      <div className="size-24 rounded-md overflow-hidden bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10">
                         <img
                           src={imagePreview || newProduct.image}
                           alt="Preview"
@@ -870,7 +870,7 @@ const ProductsPage = () => {
                           </Button>
                         </div>
                         {newProduct.image && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
                             Image uploaded to Cloudinary
                           </p>
                         )}
@@ -894,7 +894,7 @@ const ProductsPage = () => {
                         onChange={handleImageFileChange}
                         disabled={uploadingImage}
                       />
-                      <p className="text-xs text-muted-foreground mt-2">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
                         Upload image to Cloudinary (Max 10MB, JPG/PNG) or leave empty for default
                       </p>
                     </div>
@@ -1044,7 +1044,7 @@ const ProductsPage = () => {
               <Label>Product Image</Label>
               {editImagePreview ? (
                 <div className="mt-2 space-y-2">
-                  <div className="relative size-32 rounded-md overflow-hidden bg-muted">
+                  <div className="relative size-32 rounded-md overflow-hidden bg-slate-100 dark:bg-white/10">
                     <img
                       src={editImagePreview}
                       alt="Preview"

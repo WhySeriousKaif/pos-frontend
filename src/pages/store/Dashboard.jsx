@@ -170,8 +170,8 @@ const StoreAdminDashboard = () => {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <RefreshCw className="size-8 animate-spin mx-auto mb-4 text-muted-foreground" />
-          <p className="text-muted-foreground">Loading dashboard data...</p>
+          <RefreshCw className="size-8 animate-spin mx-auto mb-4 text-slate-500 dark:text-slate-400" />
+          <p className="text-slate-500 dark:text-slate-400">Loading dashboard data...</p>
         </div>
       </div>
     )
@@ -182,14 +182,14 @@ const StoreAdminDashboard = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">POS Admin Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">Dashboard</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">
             Overview of your store performance
           </p>
         </div>
         <button
           onClick={fetchDashboardData}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <RefreshCw className="size-4" />
           Refresh
@@ -205,7 +205,7 @@ const StoreAdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">₹{stats.totalSales.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               +0% from last month
             </p>
           </CardContent>
@@ -218,7 +218,7 @@ const StoreAdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalBranches}</div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               +0% from last month
             </p>
           </CardContent>
@@ -231,7 +231,7 @@ const StoreAdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalProducts}</div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               +0% from last month
             </p>
           </CardContent>
@@ -244,7 +244,7 @@ const StoreAdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalEmployees}</div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               +0% from last month
             </p>
           </CardContent>
@@ -258,7 +258,7 @@ const StoreAdminDashboard = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Sales Trend</CardTitle>
-              <select className="text-sm border rounded px-2 py-1">
+              <select className="text-sm border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded px-2 py-1">
                 <option>Daily</option>
                 <option>Weekly</option>
                 <option>Monthly</option>
@@ -299,22 +299,22 @@ const StoreAdminDashboard = () => {
                 {recentSales.map((sale) => (
                   <div
                     key={sale.id}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
+                    className="flex items-center justify-between p-3 border border-slate-200 dark:border-white/10 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
                   >
                     <div>
-                      <p className="font-medium">{sale.branchName}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-medium text-slate-900 dark:text-white">{sale.branchName}</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">
                         {sale.dateLabel}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold">₹{sale.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                      <p className="font-semibold text-slate-900 dark:text-white">₹{sale.amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+              <div className="flex items-center justify-center h-[300px] text-slate-500 dark:text-slate-400">
                 <div className="text-center">
                   <ShoppingCart className="size-12 mx-auto mb-2 opacity-50" />
                   <p>No recent sales</p>

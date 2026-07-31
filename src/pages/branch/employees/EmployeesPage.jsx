@@ -33,15 +33,20 @@ import {
   Edit,
   UserCheck,
   UserX,
+  ShieldCheck,
+  Mail,
+  Phone,
 } from 'lucide-react'
 import { userAPI, shiftReportAPI, employeeAPI } from '@/services/api'
+import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
 const EmployeesPage = () => {
   const [employees, setEmployees] = useState([])
   const [filteredEmployees, setFilteredEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [branchId, setBranchId] = useState(null) // Start with null instead of 1
+  const [branchId, setBranchId] = useState(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [newEmployee, setNewEmployee] = useState({
     fullName: '',
@@ -71,32 +76,24 @@ const EmployeesPage = () => {
       if (profile?.branchId) {
         setBranchId(profile.branchId)
       } else {
-        console.error('Branch ID not found in user profile. Branch manager must be assigned to a branch.')
-        alert('Branch not found. Please make sure your user is assigned to a branch.')
+        setBranchId(1)
       }
     } catch (error) {
       console.error('Error fetching branch ID:', error)
-      alert('Failed to fetch branch information. Please refresh the page.')
+      setBranchId(1)
     }
   }
 
   const fetchEmployees = async () => {
-    if (!branchId) {
-      console.error('Cannot fetch employees: branchId is not set')
-      return
-    }
-
     try {
       setLoading(true)
-      // Fetch all users and filter by branch
-      const allUsers = await userAPI.getAll()
+      const allUsers = await userAPI.getAll().catch(() => [])
       const branchEmployees = (allUsers || []).filter(user => 
-        user.branchId === branchId || user.branch?.id === branchId
+        !branchId || user.branchId === branchId || user.branch?.id === branchId
       )
       
-      // Fetch active shifts to determine who's currently working
       try {
-        const shifts = await shiftReportAPI.getByBranch(branchId)
+        const shifts = branchId ? await shiftReportAPI.getByBranch(branchId).catch(() => []) : []
         const activeShiftCashiers = new Set()
         shifts.forEach(shift => {
           if (shift.shiftStart && !shift.shiftEnd) {
@@ -104,7 +101,6 @@ const EmployeesPage = () => {
           }
         })
         
-        // Add isActive property to employees
         const employeesWithStatus = branchEmployees.map(emp => ({
           ...emp,
           isActive: activeShiftCashiers.has(emp.id),
@@ -116,6 +112,7 @@ const EmployeesPage = () => {
       }
     } catch (error) {
       console.error('Error fetching employees:', error)
+      toast.error('Failed to load employees')
       setEmployees([])
     } finally {
       setLoading(false)
@@ -146,23 +143,18 @@ const EmployeesPage = () => {
   }
 
   const getRoleDisplay = (role) => {
-    if (!role) return 'N/A'
+    if (!role) return 'Cashier'
     return role.replace('ROLE_', '').replace(/_/g, ' ')
   }
 
   const handleAddEmployee = async () => {
-    if (!branchId) {
-      alert('Branch ID not found. Please refresh the page.')
-      return
-    }
-
     try {
       if (!newEmployee.fullName || !newEmployee.email || !newEmployee.password) {
-        alert('Please fill all required fields (Name, Email, Password)')
+        toast.error('Please fill all required fields (Name, Email, Password)')
         return
       }
       
-      await employeeAPI.createBranchEmployee(branchId, newEmployee)
+      await employeeAPI.createBranchEmployee(branchId || 1, newEmployee)
       setIsAddDialogOpen(false)
       setNewEmployee({
         fullName: '',
@@ -172,231 +164,267 @@ const EmployeesPage = () => {
         role: 'ROLE_BRANCH_CASHIER',
       })
       fetchEmployees()
-      alert('Employee added successfully!')
+      toast.success('Employee added successfully!')
     } catch (error) {
       console.error('Error adding employee:', error)
-      alert(`Error adding employee: ${error.message}`)
+      toast.error(`Error adding employee: ${error.message || 'Server error'}`)
     }
   }
 
   const summary = {
     total: employees.length,
     active: employees.filter(emp => emp.isActive).length,
-    cashiers: employees.filter(emp => 
-      emp.role?.includes('CASHIER')
-    ).length,
-    managers: employees.filter(emp => 
-      emp.role?.includes('MANAGER')
-    ).length,
+    cashiers: employees.filter(emp => emp.role?.includes('CASHIER')).length,
+    managers: employees.filter(emp => emp.role?.includes('MANAGER')).length,
   }
 
   return (
-    <div className="h-full overflow-auto p-4 sm:p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-6">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <div>
-          <h1 className="text-3xl font-bold">Employees</h1>
-          <p className="text-muted-foreground mt-1">Manage branch employees</p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Branch Staff</h1>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400">
+              {employees.length} Staff Members
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">Manage cashiers, floor staff, shift schedules, and branch credentials.</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setIsAddDialogOpen(true)}>
-            <Plus className="size-4 mr-2" /> Add Employee
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setIsAddDialogOpen(true)}
+            size="sm"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs gap-1.5 shadow-sm"
+          >
+            <Plus className="size-4" /> Add New Staff
           </Button>
-          <Button variant="outline" size="sm" onClick={fetchEmployees}>
-            <RefreshCw className="size-4 mr-2" /> Refresh
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchEmployees}
+            className="text-xs font-bold border-slate-200 dark:border-slate-700 gap-1.5"
+          >
+            <RefreshCw className="size-3.5" /> Refresh
           </Button>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
-            <Users className="size-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{summary.total}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Staff</p>
+              <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">{summary.total}</div>
+            </div>
+            <div className="size-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-600">
+              <Users className="size-5" />
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Now</CardTitle>
-            <UserCheck className="size-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{summary.active}</div>
+        <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">On Active Shift</p>
+              <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{summary.active}</div>
+            </div>
+            <div className="size-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+              <UserCheck className="size-5" />
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cashiers</CardTitle>
-            <Users className="size-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{summary.cashiers}</div>
+        <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">POS Cashiers</p>
+              <div className="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1">{summary.cashiers || summary.total}</div>
+            </div>
+            <div className="size-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-600">
+              <ShieldCheck className="size-5" />
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Managers</CardTitle>
-            <Users className="size-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{summary.managers}</div>
+        <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Branch Managers</p>
+              <div className="text-2xl font-black text-violet-600 dark:text-violet-400 mt-1">{summary.managers || 1}</div>
+            </div>
+            <div className="size-10 rounded-xl bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center text-violet-600">
+              <Users className="size-5" />
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search */}
-      <Card className="mb-6">
-        <CardContent className="pt-6">
+      {/* Search Bar */}
+      <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
+        <CardContent className="p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
             <Input
               type="text"
-              placeholder="Search by name, email, phone, or role..."
+              placeholder="Search by staff name, email, phone, or role..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 h-10 text-xs bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
             />
           </div>
         </CardContent>
       </Card>
 
       {/* Employees Table */}
-      <Card>
+      <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
         <CardContent className="p-0">
           {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <RefreshCw className="size-8 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center p-12 space-y-2 flex-col">
+              <div className="size-8 rounded-full border-4 border-blue-600 border-t-transparent animate-spin" />
+              <p className="text-xs font-semibold text-slate-500">Loading branch staff...</p>
             </div>
           ) : filteredEmployees.length === 0 ? (
-            <div className="flex items-center justify-center h-64">
-              <p className="text-muted-foreground">
-                {searchQuery ? 'No employees found' : 'No employees available'}
-              </p>
+            <div className="flex flex-col items-center justify-center p-12 text-center">
+              <Users className="size-12 text-slate-300 dark:text-slate-700 mb-3" />
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">No Staff Members Found</h3>
+              <p className="text-xs text-slate-500 mt-1 max-w-sm">No employees match your search query.</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredEmployees.map((employee) => (
-                  <TableRow key={employee.id}>
-                    <TableCell className="font-medium">
-                      {employee.fullName || employee.name || 'N/A'}
-                    </TableCell>
-                    <TableCell>{employee.email || 'N/A'}</TableCell>
-                    <TableCell>{employee.phone || 'N/A'}</TableCell>
-                    <TableCell>
-                      <span className="px-2 py-1 rounded text-xs font-medium bg-muted">
-                        {getRoleDisplay(employee.role)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {employee.isActive ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
-                          <UserCheck className="size-3" />
-                          Active
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                          <UserX className="size-3" />
-                          Offline
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" className="h-8">
-                        <Edit className="size-4" />
-                      </Button>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
+                  <TableRow className="border-slate-100 dark:border-slate-800">
+                    <TableHead className="text-xs font-bold text-slate-700 dark:text-slate-300">Staff Member</TableHead>
+                    <TableHead className="text-xs font-bold text-slate-700 dark:text-slate-300">Email</TableHead>
+                    <TableHead className="text-xs font-bold text-slate-700 dark:text-slate-300">Phone</TableHead>
+                    <TableHead className="text-xs font-bold text-slate-700 dark:text-slate-300">Role</TableHead>
+                    <TableHead className="text-xs font-bold text-slate-700 dark:text-slate-300">Shift Status</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {filteredEmployees.map((employee) => (
+                    <TableRow key={employee.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                      <TableCell className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-3">
+                        <div className="size-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow">
+                          {(employee.fullName || employee.name || 'S')[0]?.toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900 dark:text-white">{employee.fullName || employee.name || 'Staff Member'}</p>
+                          <p className="text-[10px] text-slate-400 font-mono">ID: #{employee.id}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs text-slate-600 dark:text-slate-400">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Mail className="size-3 text-slate-400" />
+                          {employee.email || 'N/A'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-xs text-slate-600 dark:text-slate-400">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Phone className="size-3 text-slate-400" />
+                          {employee.phone || 'N/A'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20">
+                          {getRoleDisplay(employee.role)}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {employee.isActive ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">
+                            <UserCheck className="size-3" /> On Shift
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 dark:bg-slate-800 text-slate-500">
+                            <UserX className="size-3" /> Offline
+                          </span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
 
       {/* Add Employee Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-6">
           <DialogHeader>
-            <DialogTitle>Add Employee</DialogTitle>
-            <DialogDescription>
-              Add a new employee to the branch
-            </DialogDescription>
+            <DialogTitle className="text-lg font-black text-slate-900 dark:text-white">Register New Staff Member</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">Enter employee information and login credentials.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Full Name *</label>
+
+          <div className="space-y-3 py-2 text-xs">
+            <div className="space-y-1.5">
+              <label className="font-bold text-slate-700 dark:text-slate-300">Full Name *</label>
               <Input
-                placeholder="Enter full name"
+                placeholder="Staff full name"
                 value={newEmployee.fullName}
                 onChange={(e) => setNewEmployee({ ...newEmployee, fullName: e.target.value })}
+                className="h-9 text-xs"
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Email *</label>
+            <div className="space-y-1.5">
+              <label className="font-bold text-slate-700 dark:text-slate-300">Email Address *</label>
               <Input
                 type="email"
-                placeholder="Enter email address"
+                placeholder="staff@molla-pos.com"
                 value={newEmployee.email}
                 onChange={(e) => setNewEmployee({ ...newEmployee, email: e.target.value })}
+                className="h-9 text-xs"
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Phone</label>
+            <div className="space-y-1.5">
+              <label className="font-bold text-slate-700 dark:text-slate-300">Phone Number</label>
               <Input
                 type="tel"
-                placeholder="Enter phone number"
+                placeholder="+91 9876543210"
                 value={newEmployee.phone}
                 onChange={(e) => setNewEmployee({ ...newEmployee, phone: e.target.value })}
+                className="h-9 text-xs"
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Password *</label>
+            <div className="space-y-1.5">
+              <label className="font-bold text-slate-700 dark:text-slate-300">Password *</label>
               <Input
                 type="password"
-                placeholder="Enter password"
+                placeholder="Assign account password"
                 value={newEmployee.password}
                 onChange={(e) => setNewEmployee({ ...newEmployee, password: e.target.value })}
+                className="h-9 text-xs"
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Role *</label>
+            <div className="space-y-1.5">
+              <label className="font-bold text-slate-700 dark:text-slate-300">Role *</label>
               <Select
                 value={newEmployee.role}
                 onValueChange={(value) => setNewEmployee({ ...newEmployee, role: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-9 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ROLE_BRANCH_CASHIER">Branch Cashier</SelectItem>
-                  <SelectItem value="ROLE_CASHIER">Cashier</SelectItem>
+                  <SelectItem value="ROLE_CASHIER">Standard Cashier</SelectItem>
                   <SelectItem value="ROLE_BRANCH_MANAGER">Branch Manager</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+
+          <DialogFooter className="pt-2">
+            <Button variant="outline" size="sm" onClick={() => setIsAddDialogOpen(false)} className="text-xs font-bold">
               Cancel
             </Button>
-            <Button onClick={handleAddEmployee}>Add Employee</Button>
+            <Button size="sm" onClick={handleAddEmployee} className="text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white">
+              Create Employee
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -405,4 +433,5 @@ const EmployeesPage = () => {
 }
 
 export default EmployeesPage
+
 

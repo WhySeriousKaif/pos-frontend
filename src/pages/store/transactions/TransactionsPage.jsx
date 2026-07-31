@@ -296,7 +296,7 @@ const TransactionsPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <RefreshCw className="size-8 animate-spin text-muted-foreground" />
+        <RefreshCw className="size-8 animate-spin text-slate-500 dark:text-slate-400" />
       </div>
     )
   }
@@ -304,8 +304,8 @@ const TransactionsPage = () => {
   return (
     <div className="h-full overflow-auto p-4 sm:p-6">
       <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold">Transactions</h1>
-        <p className="text-muted-foreground mt-1">View all financial transactions</p>
+        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">Transactions</h1>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">View all financial transactions</p>
       </div>
 
       {/* Summary Cards */}
@@ -314,7 +314,7 @@ const TransactionsPage = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Income</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Income</p>
                 <p className="text-2xl font-bold mt-1">{formatCurrency(stats.totalIncome)}</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
@@ -328,7 +328,7 @@ const TransactionsPage = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Expenses</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Expenses</p>
                 <p className="text-2xl font-bold mt-1">{formatCurrency(stats.totalExpenses)}</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
@@ -342,7 +342,7 @@ const TransactionsPage = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Net Amount</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Net Amount</p>
                 <p className="text-2xl font-bold mt-1">{formatCurrency(stats.netAmount)}</p>
               </div>
               <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
@@ -417,7 +417,7 @@ const TransactionsPage = () => {
         </CardHeader>
         <CardContent>
           {filteredTransactions.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
+            <div className="text-center py-12 text-slate-500 dark:text-slate-400">
               <DollarSign className="size-12 mx-auto mb-2 opacity-50" />
               <p>No transactions found</p>
             </div>

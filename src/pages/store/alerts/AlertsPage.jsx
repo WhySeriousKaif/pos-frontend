@@ -203,7 +203,10 @@ const AlertsPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <RefreshCw className="size-8 animate-spin text-muted-foreground" />
+        <div className="text-center">
+          <RefreshCw className="size-8 animate-spin mx-auto mb-4 text-slate-500 dark:text-slate-400" />
+          <p className="text-slate-500 dark:text-slate-400">Loading alerts...</p>
+        </div>
       </div>
     )
   }
@@ -212,8 +215,8 @@ const AlertsPage = () => {
     <div className="h-full overflow-auto p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Alerts</h1>
-          <p className="text-muted-foreground mt-1">Monitor important alerts and notifications</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">Alerts</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Monitor important alerts and notifications</p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchAlerts}>
           <RefreshCw className="size-4 mr-2" />
@@ -232,7 +235,7 @@ const AlertsPage = () => {
           </CardHeader>
           <CardContent>
             {inactiveCashiers.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-slate-500 dark:text-slate-400">
                 <User className="size-12 mx-auto mb-2 opacity-50" />
                 <p>No inactive cashiers found</p>
               </div>
@@ -252,7 +255,7 @@ const AlertsPage = () => {
                       <TableRow key={cashier.id}>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <User className="size-4 text-muted-foreground" />
+                            <User className="size-4 text-slate-500 dark:text-slate-400" />
                             <span>{cashier.id}</span>
                           </div>
                         </TableCell>
@@ -260,18 +263,18 @@ const AlertsPage = () => {
                           <div>
                             <div className="font-medium">{cashier.fullName}</div>
                             {cashier.email && (
-                              <div className="text-sm text-muted-foreground">{cashier.email}</div>
+                              <div className="text-sm text-slate-500 dark:text-slate-400">{cashier.email}</div>
                             )}
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <MapPin className="size-4 text-muted-foreground" />
+                            <MapPin className="size-4 text-slate-500 dark:text-slate-400" />
                             <span>{cashier.branchName}</span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">
+                          <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800 dark:bg-blue-500/10 dark:text-blue-400">
                             {cashier.lastLogin}
                           </span>
                         </TableCell>
@@ -294,7 +297,7 @@ const AlertsPage = () => {
           </CardHeader>
           <CardContent>
             {lowStockProducts.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-slate-500 dark:text-slate-400">
                 <Package className="size-12 mx-auto mb-2 opacity-50" />
                 <p>All products are well stocked</p>
               </div>
@@ -325,14 +328,14 @@ const AlertsPage = () => {
                         <TableCell>
                           <div className="max-w-[200px]">
                             <div className="font-medium truncate">{product.name}</div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
                               Stock: {product.quantity} units
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Package className="size-4 text-muted-foreground" />
+                            <Package className="size-4 text-slate-500 dark:text-slate-400" />
                             <span className="text-sm">{product.category}</span>
                           </div>
                         </TableCell>
@@ -358,7 +361,7 @@ const AlertsPage = () => {
           </CardHeader>
           <CardContent>
             {noSaleBranches.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-slate-500 dark:text-slate-400">
                 <TrendingUp className="size-12 mx-auto mb-2 opacity-50" />
                 <p>All branches have sales today</p>
               </div>
@@ -379,7 +382,7 @@ const AlertsPage = () => {
                         <TableCell className="font-medium">{branch.name}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <MapPin className="size-4 text-muted-foreground" />
+                            <MapPin className="size-4 text-slate-500 dark:text-slate-400" />
                             <span className="text-sm">{branch.address}</span>
                           </div>
                         </TableCell>
@@ -402,7 +405,7 @@ const AlertsPage = () => {
           </CardHeader>
           <CardContent>
             {refundSpikes.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-slate-500 dark:text-slate-400">
                 <DollarSign className="size-12 mx-auto mb-2 opacity-50" />
                 <p>No high-value refunds in the last 30 days</p>
               </div>
@@ -428,7 +431,7 @@ const AlertsPage = () => {
                         <TableCell>
                           <div className="max-w-[200px]">
                             <div className="text-sm truncate">{refund.reason}</div>
-                            <div className="text-xs text-muted-foreground">{refund.createdAt}</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400">{refund.createdAt}</div>
                           </div>
                         </TableCell>
                       </TableRow>

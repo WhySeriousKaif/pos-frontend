@@ -123,27 +123,25 @@ const CustomerPaymentSection = () => {
       if (paymentType === 'UPI' || paymentType === 'CARD') {
         // Create order on backend to get Razorpay Order ID
         const response = await paymentAPI.createOrder(orderData);
-        // Ensure response structure matches what backend returns
         const { id: order_id, currency, amount, key } = response;
 
         const options = {
-          key: key || "rzp_test_MwXi3d9f7g1t8Z", // Use key from backend or fallback to test key
+          key: key || "rzp_test_MwXi3d9f7g1t8Z",
           amount: amount,
-          currency: currency,
+          currency: currency || "INR",
           name: "Molla POS",
-          description: "Payment for Order",
+          description: paymentType === 'UPI' ? 'UPI Payment' : 'Card Payment',
           order_id: order_id,
           handler: async function (response) {
-            // Payment success - create order in backend
             await createBackendOrder(response.razorpay_payment_id, response.razorpay_order_id, response.razorpay_signature);
           },
           prefill: {
-            name: selectedCustomer?.name || "",
-            email: selectedCustomer?.email || "",
-            contact: selectedCustomer?.phone || ""
+            name: selectedCustomer?.name || selectedCustomer?.fullName || "Walk-in Customer",
+            email: selectedCustomer?.email || "customer@molla.com",
+            contact: selectedCustomer?.phone || "9876543210",
           },
           theme: {
-            color: "#3399cc"
+            color: "#2563EB"
           },
           modal: {
             ondismiss: function () {
@@ -159,7 +157,6 @@ const CustomerPaymentSection = () => {
           setProcessing(false);
         });
         rzp1.open();
-
       } else {
         // Cash payment
         await createBackendOrder();

@@ -449,7 +449,7 @@ const ReportsPage = () => {
   if (loading && !reportData) {
     return (
       <div className="flex items-center justify-center h-full">
-        <RefreshCw className="size-8 animate-spin text-muted-foreground" />
+        <RefreshCw className="size-8 animate-spin text-slate-500 dark:text-slate-400" />
       </div>
     )
   }
@@ -458,8 +458,8 @@ const ReportsPage = () => {
     <div className="h-full overflow-auto p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Reports</h1>
-          <p className="text-muted-foreground mt-1">Generate and view detailed reports</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">Reports</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Generate and view detailed reports</p>
         </div>
         {reportData && (
           <Button onClick={handleExport}>
@@ -562,7 +562,7 @@ const ReportsPage = () => {
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
                           {key.replace(/([A-Z])/g, ' $1').trim()}
                         </p>
                         <p className="text-2xl font-bold mt-1">
@@ -644,7 +644,7 @@ const ReportsPage = () => {
               </CardHeader>
               <CardContent>
                 {/* Render appropriate table based on report type */}
-                <div className="text-sm text-muted-foreground">
+                <div className="text-sm text-slate-500 dark:text-slate-400">
                   Detailed table view will be displayed here
                 </div>
               </CardContent>

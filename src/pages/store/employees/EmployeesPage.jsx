@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Search, Plus, RefreshCw, Edit, Trash2, Mail, Phone, MapPin, Users } from 'lucide-react'
 import { employeeAPI, userAPI, storeAPI, branchAPI } from '@/services/api'
+import { toast } from 'sonner'
 import {
   Dialog,
   DialogContent,
@@ -136,47 +137,47 @@ const EmployeesPage = () => {
   const handleAddEmployee = async () => {
     // Validate required fields
     if (!newEmployee.fullName || !newEmployee.fullName.trim()) {
-      alert('Please enter employee full name')
+      toast.error('Please enter employee full name')
       return
     }
 
     if (!newEmployee.email || !newEmployee.email.trim()) {
-      alert('Please enter employee email address')
+      toast.error('Please enter employee email address')
       return
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(newEmployee.email.trim())) {
-      alert('Please enter a valid email address')
+      toast.error('Please enter a valid email address')
       return
     }
 
     if (!newEmployee.password || newEmployee.password.length < 6) {
-      alert('Please enter a password (minimum 6 characters)')
+      toast.error('Please enter a password (minimum 6 characters)')
       return
     }
 
     if (!newEmployee.role) {
-      alert('Please select a role for the employee')
+      toast.error('Please select a role for the employee')
       return
     }
 
     if (!storeId) {
-      alert('Store ID not found. Please refresh the page.')
+      toast.error('Store ID not found. Please refresh the page.')
       return
     }
 
     // Validate branch selection for branch-specific roles
     if ((newEmployee.role === 'ROLE_BRANCH_MANAGER' || newEmployee.role === 'ROLE_BRANCH_CASHIER')) {
       if (!newEmployee.branchId) {
-        alert('Branch is required for Branch Manager and Branch Cashier roles')
+        toast.error('Branch is required for Branch Manager and Branch Cashier roles')
         return
       }
       // Check if branch exists
       const selectedBranch = branches.find(b => b.id.toString() === newEmployee.branchId.toString())
       if (!selectedBranch) {
-        alert('Selected branch not found. Please refresh and try again.')
+        toast.error('Selected branch not found. Please refresh and try again.')
         return
       }
     }
@@ -185,7 +186,7 @@ const EmployeesPage = () => {
     if (newEmployee.phone && newEmployee.phone.trim()) {
       const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/
       if (!phoneRegex.test(newEmployee.phone.trim())) {
-        alert('Please enter a valid phone number')
+        toast.error('Please enter a valid phone number')
         return
       }
     }
@@ -214,14 +215,14 @@ const EmployeesPage = () => {
       })
       fetchEmployees()
       fetchBranches() // Refresh branches list
-      alert('Employee created successfully!')
+      toast.success('Employee created successfully!')
     } catch (error) {
       console.error('Error creating employee:', error)
       const errorMessage = error.message || 'Failed to create employee'
       if (errorMessage.includes('email') || errorMessage.includes('Email')) {
-        alert(`Email already exists. Please use a different email address.\n\nError: ${errorMessage}`)
+        toast.error(`Email already exists. Please use a different email address.`)
       } else {
-        alert(`Failed to create employee: ${errorMessage}`)
+        toast.error(`Failed to create employee: ${errorMessage}`)
       }
     } finally {
       setCreating(false)
@@ -243,18 +244,18 @@ const EmployeesPage = () => {
 
   const handleUpdateEmployee = async () => {
     if (!editEmployee.fullName || !editEmployee.email) {
-      alert('Please fill in all required fields (Name, Email)')
+      toast.error('Please fill in all required fields (Name, Email)')
       return
     }
 
     if (!selectedEmployee?.id) {
-      alert('Employee ID not found')
+      toast.error('Employee ID not found')
       return
     }
 
     // Validate branch selection for branch-specific roles
     if ((editEmployee.role === 'ROLE_BRANCH_MANAGER' || editEmployee.role === 'ROLE_BRANCH_CASHIER') && !editEmployee.branchId) {
-      alert('Branch is required for Branch Manager and Branch Cashier roles')
+      toast.error('Branch is required for Branch Manager and Branch Cashier roles')
       return
     }
 
@@ -277,10 +278,10 @@ const EmployeesPage = () => {
       setIsEditDialogOpen(false)
       setSelectedEmployee(null)
       fetchEmployees()
-      alert('Employee updated successfully!')
+      toast.success('Employee updated successfully!')
     } catch (error) {
       console.error('Error updating employee:', error)
-      alert(error.message || 'Failed to update employee')
+      toast.error(error.message || 'Failed to update employee')
     } finally {
       setUpdating(false)
     }
@@ -292,10 +293,10 @@ const EmployeesPage = () => {
     try {
       await employeeAPI.deleteEmployee(id)
       fetchEmployees()
-      alert('Employee deleted successfully!')
+      toast.success('Employee deleted successfully!')
     } catch (error) {
       console.error('Error deleting employee:', error)
-      alert('Failed to delete employee')
+      toast.error('Failed to delete employee')
     }
   }
 
@@ -315,8 +316,8 @@ const EmployeesPage = () => {
     <div className="h-full overflow-auto p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Employee Management</h1>
-          <p className="text-muted-foreground mt-1">Manage your store employees</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">Employee Management</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Manage your store employees</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={fetchEmployees}>
@@ -335,7 +336,7 @@ const EmployeesPage = () => {
         <CardContent className="pt-6">
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-500 dark:text-slate-400" />
               <Input
                 type="text"
                 placeholder="Search employees..."
@@ -357,12 +358,12 @@ const EmployeesPage = () => {
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <RefreshCw className="size-8 animate-spin text-muted-foreground" />
+              <RefreshCw className="size-8 animate-spin text-slate-500 dark:text-slate-400" />
             </div>
           ) : filteredEmployees.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Users className="size-16 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">
+              <Users className="size-16 text-slate-500 dark:text-slate-400 mb-4" />
+              <p className="text-slate-500 dark:text-slate-400">
                 {searchQuery ? 'No employees found matching your search' : 'No employees available. Create your first employee!'}
               </p>
             </div>
@@ -388,34 +389,34 @@ const EmployeesPage = () => {
                         <div className="space-y-1">
                           {employee.email && (
                             <div className="flex items-center gap-2 text-sm">
-                              <Mail className="size-4 text-muted-foreground" />
+                              <Mail className="size-4 text-slate-500 dark:text-slate-400" />
                               <span>{employee.email}</span>
                             </div>
                           )}
                           {employee.phone && (
                             <div className="flex items-center gap-2 text-sm">
-                              <Phone className="size-4 text-muted-foreground" />
+                              <Phone className="size-4 text-slate-500 dark:text-slate-400" />
                               <span>{employee.phone}</span>
                             </div>
                           )}
                           {!employee.email && !employee.phone && (
-                            <span className="text-muted-foreground text-sm">No contact info</span>
+                            <span className="text-slate-500 dark:text-slate-400 text-sm">No contact info</span>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="px-2 py-1 rounded text-xs font-medium bg-muted">
+                        <span className="px-2 py-1 rounded text-xs font-medium bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-300">
                           {getRoleLabel(employee.role)}
                         </span>
                       </TableCell>
                       <TableCell>
                         {employee.branch?.name || employee.branchId ? (
                           <div className="flex items-center gap-2">
-                            <MapPin className="size-4 text-muted-foreground" />
+                            <MapPin className="size-4 text-slate-500 dark:text-slate-400" />
                             <span className="text-sm">{employee.branch?.name || 'Branch ' + employee.branchId}</span>
                           </div>
                         ) : (
-                          <span className="text-muted-foreground text-sm">-</span>
+                          <span className="text-slate-500 dark:text-slate-400 text-sm">-</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
@@ -431,7 +432,7 @@ const EmployeesPage = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                            className="h-8 w-8 p-0 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                             onClick={() => handleDeleteEmployee(employee.id)}
                           >
                             <Trash2 className="size-4" />

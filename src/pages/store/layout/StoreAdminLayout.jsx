@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import {
   LayoutDashboard,
   Store,
@@ -14,11 +15,13 @@ import {
   FileText,
   Settings,
   Menu,
-  X,
   LogOut,
   TrendingUp,
   Sun,
   Moon,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
@@ -27,19 +30,74 @@ import { logoutUser } from '@/store/slices/authSlice'
 import { storeAPI, userAPI } from '@/services/api'
 import { useTheme } from '@/contexts/ThemeContext'
 
+const menuItems = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/store' },
+  { id: 'stores', label: 'Stores', icon: Store, path: '/store/stores' },
+  { id: 'branches', label: 'Branches', icon: Building2, path: '/store/branches' },
+  { id: 'products', label: 'Products', icon: Package, path: '/store/products' },
+  { id: 'categories', label: 'Categories', icon: Tag, path: '/store/categories' },
+  { id: 'employees', label: 'Employees', icon: Users, path: '/store/employees' },
+  { id: 'alerts', label: 'Alerts', icon: Bell, path: '/store/alerts' },
+  { id: 'sales', label: 'Sales', icon: TrendingUp, path: '/store/sales' },
+  { id: 'transactions', label: 'Transactions', icon: CreditCard, path: '/store/transactions' },
+  { id: 'reports', label: 'Reports', icon: FileText, path: '/store/reports' },
+  { id: 'settings', label: 'Settings', icon: Settings, path: '/store/settings' },
+]
+
+const HeaderBrand = () => (
+  <div className="flex items-center gap-2.5 shrink-0">
+    <div className="w-9 h-9 rounded-xl bg-black flex items-center justify-center shadow-md overflow-hidden border border-blue-900/40 shrink-0">
+      <img src="/bilix_logo.png" alt="Bilix" className="w-full h-full object-cover" />
+    </div>
+    <div className="hidden sm:block leading-tight">
+      <div className="text-base font-black tracking-tight text-slate-900 dark:text-white leading-tight">Bilix</div>
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">Store Admin</div>
+    </div>
+  </div>
+)
+
+const NavItems = ({ isActive, onNavigate, collapsed }) => (
+  <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
+    {menuItems.map((item) => {
+      const Icon = item.icon
+      const active = isActive(item.path)
+      return (
+        <button
+          key={item.id}
+          onClick={() => onNavigate(item.path)}
+          title={collapsed ? item.label : undefined}
+          className={cn(
+            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors border-l-[3px] cursor-pointer',
+            collapsed && 'justify-center px-0',
+            active
+              ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-600'
+              : 'text-slate-600 dark:text-slate-400 border-transparent hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white'
+          )}
+        >
+          <Icon className="size-[18px] shrink-0" />
+          {!collapsed && <span>{item.label}</span>}
+        </button>
+      )
+    })}
+  </nav>
+)
+
 const StoreAdminLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('storeAdminSidebarCollapsed') === 'true')
   const [storeInfo, setStoreInfo] = useState(null)
   const [currentUser, setCurrentUser] = useState(null)
   const navigate = useNavigate()
   const location = useLocation()
   const dispatch = useDispatch()
-  const { user } = useSelector((state) => state.auth)
   const { darkMode, toggleTheme } = useTheme()
 
   React.useEffect(() => {
     fetchStoreInfo()
     fetchCurrentUser()
+    const handleStoreInfoUpdate = () => fetchStoreInfo()
+    window.addEventListener('storeInfoUpdated', handleStoreInfoUpdate)
+    return () => window.removeEventListener('storeInfoUpdated', handleStoreInfoUpdate)
   }, [])
 
   const fetchCurrentUser = async () => {
@@ -59,81 +117,9 @@ const StoreAdminLayout = ({ children }) => {
       }
     } catch (error) {
       console.error('Error fetching store info:', error)
-      setStoreInfo({
-        name: 'Store',
-        brand: 'Brand',
-      })
+      setStoreInfo({ brand: 'Store', description: '' })
     }
   }
-
-  const menuItems = [
-    {
-      id: 'dashboard',
-      label: 'Dashboard',
-      icon: LayoutDashboard,
-      path: '/store',
-    },
-    {
-      id: 'stores',
-      label: 'Stores',
-      icon: Store,
-      path: '/store/stores',
-    },
-    {
-      id: 'branches',
-      label: 'Branches',
-      icon: Building2,
-      path: '/store/branches',
-    },
-    {
-      id: 'products',
-      label: 'Products',
-      icon: Package,
-      path: '/store/products',
-    },
-    {
-      id: 'categories',
-      label: 'Categories',
-      icon: Tag,
-      path: '/store/categories',
-    },
-    {
-      id: 'employees',
-      label: 'Employees',
-      icon: Users,
-      path: '/store/employees',
-    },
-    {
-      id: 'alerts',
-      label: 'Alerts',
-      icon: Bell,
-      path: '/store/alerts',
-    },
-    {
-      id: 'sales',
-      label: 'Sales',
-      icon: TrendingUp,
-      path: '/store/sales',
-    },
-    {
-      id: 'transactions',
-      label: 'Transactions',
-      icon: CreditCard,
-      path: '/store/transactions',
-    },
-    {
-      id: 'reports',
-      label: 'Reports',
-      icon: FileText,
-      path: '/store/reports',
-    },
-    {
-      id: 'settings',
-      label: 'Settings',
-      icon: Settings,
-      path: '/store/settings',
-    },
-  ]
 
   const handleNavigate = (path) => {
     navigate(path)
@@ -145,162 +131,160 @@ const StoreAdminLayout = ({ children }) => {
     navigate('/auth/login')
   }
 
+  const toggleCollapse = () => {
+    setCollapsed((prev) => {
+      localStorage.setItem('storeAdminSidebarCollapsed', String(!prev))
+      return !prev
+    })
+  }
+
   const isActive = (path) => {
-    // Exact match for dashboard
     if (path === '/store' || path === '/store/') {
       return location.pathname === '/store' || location.pathname === '/store/'
     }
-    // For other paths, check if current path starts with the menu path
     return location.pathname.startsWith(path)
   }
 
+  const displayName = currentUser?.fullName || currentUser?.name || 'Store Admin'
+  const initial = displayName.charAt(0).toUpperCase()
+
+  const StoreInfoBlock = () => (
+    <div className="rounded-lg bg-blue-50/60 dark:bg-blue-500/5 px-3 py-2.5">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-1">
+        Store
+      </div>
+      <div className="text-xs">
+        <p className="font-medium text-slate-900 dark:text-white truncate">{storeInfo?.brand || 'N/A'}</p>
+        <p className="text-slate-500 dark:text-slate-400 truncate">{storeInfo?.storeType || storeInfo?.description || 'N/A'}</p>
+      </div>
+    </div>
+  )
+
   return (
-    <div className="h-screen w-screen flex flex-col bg-background overflow-hidden">
+    <div className="h-screen w-screen flex flex-col bg-[#F8FAFE] dark:bg-[#0B1220] text-slate-900 dark:text-slate-100 overflow-hidden transition-colors">
       {/* Header */}
-      <div className="h-14 sm:h-16 bg-card border-b border-border sticky top-0 z-10 px-2 sm:px-4 py-2 shrink-0">
-        <div className="flex items-center justify-between gap-2 sm:gap-4 h-full">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 lg:hidden"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <Menu className="size-5" />
-            </Button>
-            <Store className="size-5 text-primary" />
-            <h1 className="text-lg sm:text-xl font-bold text-foreground">POS Admin</h1>
-          </div>
-          
-          <div className="flex-1 max-w-md mx-4">
+      <header className="h-16 shrink-0 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 flex items-center justify-between px-4 sm:px-6 z-10 gap-4">
+        <div className="flex items-center gap-2 min-w-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden shrink-0"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <Menu className="size-5" />
+          </Button>
+          <HeaderBrand />
+        </div>
+        <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
+          <div className="hidden sm:flex items-center gap-2.5 border border-slate-200 dark:border-white/10 rounded-full px-3.5 py-2 bg-slate-50 dark:bg-white/5 w-64 max-w-[40%]">
+            <Search className="size-4 text-slate-400 shrink-0" />
             <input
               type="text"
               placeholder="Search..."
-              className="w-full px-4 py-2 text-sm border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+              className="outline-none bg-transparent text-sm w-full text-slate-900 dark:text-white placeholder:text-slate-400"
             />
           </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={toggleTheme}
-              title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              {darkMode ? <Sun className="size-5" /> : <Moon className="size-5" />}
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 relative">
-              <Bell className="size-5" />
-              <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                3
-              </span>
-            </Button>
-            <div className="flex items-center gap-2 px-2">
-              <Users className="size-5 text-muted-foreground" />
-              <span className="text-sm font-medium hidden sm:inline text-foreground">
-                {currentUser?.fullName || currentUser?.name || 'Store Admin'}
-              </span>
+          <button
+            onClick={toggleTheme}
+            title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="p-2.5 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+          >
+            {darkMode ? <Sun className="size-5" /> : <Moon className="size-5" />}
+          </button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="relative p-2.5 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer">
+                <Bell className="size-5" />
+                <span className="absolute top-1.5 right-1.5 h-4 min-w-4 px-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-slate-900">
+                  3
+                </span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-72 p-0 bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10">
+              <div className="px-4 py-3 border-b border-slate-100 dark:border-white/10 font-semibold text-sm text-slate-900 dark:text-white">
+                Notifications
+              </div>
+              <div className="px-4 py-8 text-center text-sm text-slate-400">Nothing new right now</div>
+            </PopoverContent>
+          </Popover>
+          <div className="flex items-center gap-2.5 pl-2 ml-1 border-l border-slate-200 dark:border-white/10">
+            <div className="h-9 w-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+              {initial}
+            </div>
+            <div className="hidden sm:block text-sm">
+              <div className="font-semibold text-slate-900 dark:text-white leading-tight">{displayName}</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400">Store Admin</div>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
+        {/* Desktop Sidebar */}
+        <aside
+          className={cn(
+            'hidden lg:flex relative shrink-0 flex-col border-r border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 transition-all duration-200',
+            collapsed ? 'w-[76px]' : 'w-64'
+          )}
+        >
+          <div className="pt-3" />
+          <NavItems isActive={isActive} onNavigate={handleNavigate} collapsed={collapsed} />
+          <div className="p-3 border-t border-slate-200 dark:border-white/10 space-y-2">
+            {!collapsed && <StoreInfoBlock />}
+            <button
+              onClick={toggleCollapse}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className={cn(
+                'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer',
+                collapsed && 'justify-center px-0'
+              )}
+            >
+              {collapsed ? <ChevronRight className="size-[18px] shrink-0" /> : <ChevronLeft className="size-[18px] shrink-0" />}
+              {!collapsed && 'Collapse'}
+            </button>
+            <button
+              onClick={handleLogout}
+              title={collapsed ? 'Log Out' : undefined}
+              className={cn(
+                'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors cursor-pointer',
+                collapsed && 'justify-center px-0'
+              )}
+            >
+              <LogOut className="size-[18px] shrink-0" />
+              {!collapsed && 'Log Out'}
+            </button>
+          </div>
+        </aside>
+
+        {/* Mobile Sidebar */}
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-          <SheetContent side="left" className="w-[280px] sm:w-[320px] p-0 flex flex-col bg-card border-r">
-            <SheetHeader className="p-4 pb-2">
-              <div className="flex items-center justify-end">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <X className="size-4" />
-                </Button>
-              </div>
+          <SheetContent side="left" className="w-64 p-0 flex flex-col">
+            <SheetHeader className="p-4 border-b border-slate-200 dark:border-white/10">
+              <SheetTitle asChild>
+                <div>
+                  <HeaderBrand />
+                </div>
+              </SheetTitle>
             </SheetHeader>
-
-            <nav className="flex-1 overflow-y-auto px-4 pb-4 space-y-1">
-              {menuItems.map((item) => {
-                const Icon = item.icon
-                const active = isActive(item.path)
-                return (
-                  <Button
-                    key={item.id}
-                    variant={active ? 'secondary' : 'ghost'}
-                    className={cn(
-                      'w-full justify-start gap-3 h-11 text-foreground',
-                      active && 'bg-accent text-accent-foreground',
-                      !active && 'hover:bg-muted text-foreground'
-                    )}
-                    onClick={() => handleNavigate(item.path)}
-                  >
-                    <Icon className="size-5" />
-                    <span className="text-sm font-medium">{item.label}</span>
-                  </Button>
-                )
-              })}
-            </nav>
-
-            <div className="p-4 border-t">
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-3 h-11 border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+            <NavItems isActive={isActive} onNavigate={handleNavigate} collapsed={false} />
+            <div className="p-3 border-t border-slate-200 dark:border-white/10 space-y-2">
+              <StoreInfoBlock />
+              <button
                 onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors cursor-pointer"
               >
-                <LogOut className="size-5" />
-                <span className="text-sm font-medium">Logout</span>
-              </Button>
+                <LogOut className="size-[18px]" />
+                Log Out
+              </button>
             </div>
           </SheetContent>
         </Sheet>
 
-        {/* Desktop Sidebar */}
-        <div className="hidden lg:flex flex-col w-64 bg-card border-r">
-          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-            {menuItems.map((item) => {
-              const Icon = item.icon
-              const active = isActive(item.path)
-              return (
-                <Button
-                  key={item.id}
-                  variant={active ? 'secondary' : 'ghost'}
-                  className={cn(
-                    'w-full justify-start gap-3 h-11 text-foreground',
-                    active && 'bg-accent text-accent-foreground',
-                    !active && 'hover:bg-muted text-foreground'
-                  )}
-                  onClick={() => handleNavigate(item.path)}
-                >
-                  <Icon className="size-5" />
-                  <span className="text-sm font-medium">{item.label}</span>
-                </Button>
-              )
-            })}
-          </nav>
-
-          <div className="p-4 border-t">
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-3 h-11 border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
-              onClick={handleLogout}
-            >
-              <LogOut className="size-5" />
-              <span className="text-sm font-medium">Logout</span>
-            </Button>
-          </div>
-        </div>
-
-        {/* Content Area */}
-        <div className="flex-1 overflow-hidden bg-background">{children}</div>
+        {/* Main Content */}
+        <main className="flex-1 overflow-auto bg-[#F8FAFE] dark:bg-[#0B1220]">{children}</main>
       </div>
     </div>
   )
 }
 
 export default StoreAdminLayout
-

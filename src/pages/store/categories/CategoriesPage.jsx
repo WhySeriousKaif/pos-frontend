@@ -222,8 +222,8 @@ const CategoriesPage = () => {
     <div className="h-full overflow-auto p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Category Management</h1>
-          <p className="text-muted-foreground mt-1">Manage your product categories</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">Categories</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Manage your product categories</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={fetchCategories}>
@@ -242,7 +242,7 @@ const CategoriesPage = () => {
         <CardContent className="pt-6">
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
               <Input
                 type="text"
                 placeholder="Search categories..."
@@ -264,12 +264,12 @@ const CategoriesPage = () => {
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <RefreshCw className="size-8 animate-spin text-muted-foreground" />
+              <RefreshCw className="size-8 animate-spin text-slate-400" />
             </div>
           ) : filteredCategories.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Tag className="size-16 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">
+              <Tag className="size-16 text-slate-300 dark:text-slate-600 mb-4" />
+              <p className="text-slate-500 dark:text-slate-400">
                 {searchQuery ? 'No categories found matching your search' : 'No categories available. Create your first category!'}
               </p>
             </div>
@@ -289,18 +289,18 @@ const CategoriesPage = () => {
                     <TableRow key={category.id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Tag className="size-4 text-primary" />
-                          <span className="font-medium">{category.name || 'N/A'}</span>
+                          <Tag className="size-4 text-blue-600 dark:text-blue-400" />
+                          <span className="font-medium text-slate-900 dark:text-white">{category.name || 'N/A'}</span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-muted-foreground text-sm">
+                        <span className="text-slate-500 dark:text-slate-400 text-sm">
                           {category.description || '-'}
                         </span>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Package className="size-4 text-muted-foreground" />
+                        <div className="flex items-center gap-2 text-slate-900 dark:text-white">
+                          <Package className="size-4 text-slate-400" />
                           <span>{productCounts[category.id] || 0}</span>
                         </div>
                       </TableCell>
@@ -317,7 +317,7 @@ const CategoriesPage = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                            className="h-8 w-8 p-0 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                             onClick={() => handleDeleteCategory(category.id)}
                           >
                             <Trash2 className="size-4" />

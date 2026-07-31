@@ -227,8 +227,8 @@ const BranchesPage = () => {
     <div className="h-full overflow-auto p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Branch Management</h1>
-          <p className="text-muted-foreground mt-1">Manage your store branches</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">Branch Management</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Manage your store branches</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={fetchBranches}>
@@ -247,7 +247,7 @@ const BranchesPage = () => {
         <CardContent className="pt-6">
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-500 dark:text-slate-400" />
               <Input
                 type="text"
                 placeholder="Search branches..."
@@ -269,12 +269,12 @@ const BranchesPage = () => {
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <RefreshCw className="size-8 animate-spin text-muted-foreground" />
+              <RefreshCw className="size-8 animate-spin text-slate-500 dark:text-slate-400" />
             </div>
           ) : filteredBranches.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Building2 className="size-16 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">
+              <Building2 className="size-16 text-slate-500 dark:text-slate-400 mb-4" />
+              <p className="text-slate-500 dark:text-slate-400">
                 {searchQuery ? 'No branches found matching your search' : 'No branches available. Create your first branch!'}
               </p>
             </div>
@@ -299,25 +299,25 @@ const BranchesPage = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <MapPin className="size-4 text-muted-foreground" />
+                          <MapPin className="size-4 text-slate-500 dark:text-slate-400" />
                           <span className="line-clamp-2">{branch.address || 'N/A'}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Users className="size-4 text-muted-foreground" />
+                          <Users className="size-4 text-slate-500 dark:text-slate-400" />
                           <span>{branch.manager?.fullName || 'Not assigned'}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Phone className="size-4 text-muted-foreground" />
+                          <Phone className="size-4 text-slate-500 dark:text-slate-400" />
                           <span>{branch.phone || 'N/A'}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Mail className="size-4 text-muted-foreground" />
+                          <Mail className="size-4 text-slate-500 dark:text-slate-400" />
                           <span>{branch.email || 'N/A'}</span>
                         </div>
                       </TableCell>
@@ -334,7 +334,7 @@ const BranchesPage = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                            className="h-8 w-8 p-0 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                             onClick={() => handleDeleteBranch(branch.id)}
                           >
                             <Trash2 className="size-4" />

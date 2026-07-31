@@ -138,7 +138,7 @@ const SettingsPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <RefreshCw className="size-8 animate-spin text-muted-foreground" />
+        <RefreshCw className="size-8 animate-spin text-slate-500 dark:text-slate-400" />
       </div>
     )
   }
@@ -146,8 +146,8 @@ const SettingsPage = () => {
   return (
     <div className="h-full overflow-auto p-4 sm:p-6">
       <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground mt-1">Manage your store and account settings</p>
+        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">Settings</h1>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">Manage your store and account settings</p>
       </div>
 
       <div className="space-y-6">
@@ -203,7 +203,7 @@ const SettingsPage = () => {
               />
             </div>
 
-            <div className="border-t pt-4">
+            <div className="border-t border-slate-200 dark:border-white/10 pt-4">
               <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <MapPin className="size-4" />
                 Contact Information
@@ -246,7 +246,7 @@ const SettingsPage = () => {
               </div>
             </div>
 
-            <div className="flex justify-end pt-4 border-t">
+            <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-white/10">
               <Button onClick={handleStoreSave} disabled={saving}>
                 <Save className="size-4 mr-2" />
                 {saving ? 'Saving...' : 'Save Store Settings'}
@@ -303,7 +303,7 @@ const SettingsPage = () => {
               </div>
             </div>
 
-            <div className="flex justify-end pt-4 border-t">
+            <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-white/10">
               <Button onClick={handleUserSave} variant="outline">
                 <Save className="size-4 mr-2" />
                 Save Account Settings
@@ -321,7 +321,7 @@ const SettingsPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-slate-500 dark:text-slate-400">
               Additional preferences and notification settings will be available here.
             </div>
           </CardContent>
@@ -336,7 +336,7 @@ const SettingsPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-slate-500 dark:text-slate-400">
               Password change and security settings will be available here.
             </div>
           </CardContent>

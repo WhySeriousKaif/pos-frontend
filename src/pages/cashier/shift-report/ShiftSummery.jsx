@@ -8,6 +8,7 @@ import TopSellingItems from "./TopSellingItems";
 import RecentOrders from "./RecentOrders";
 import RefundsTable from "./RefundsTable";
 import { shiftReportAPI } from "@/services/api";
+import { exportShiftSummaryReportPDF } from "@/utils/reportPdfGenerator";
 
 const ShiftSummery = () => {
   const { user } = useSelector((state) => state.auth);
@@ -55,7 +56,11 @@ const ShiftSummery = () => {
   };
 
   const handlePrint = () => {
-    window.print();
+    if (shiftData) {
+      exportShiftSummaryReportPDF(shiftData);
+    } else {
+      window.print();
+    }
   };
 
   const handleEndShift = async () => {
