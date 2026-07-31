@@ -7,23 +7,7 @@ import ShiftSummery from '@/pages/cashier/shift-report/ShiftSummery'
 import CashierSettingsPage from '@/pages/cashier/settings/SettingsPage'
 import CashierCustomersPage from '@/pages/cashier/customers/CustomersPage'
 import { CartProvider } from '@/contexts/CartContext'
-import { useSideBar } from '@/contexts/hook/useSideBar'
-import PosSidebar from '@/pages/cashier/sidebar/PosSidebar'
-import POSHeader from '@/pages/cashier/header/POSHeader'
-
-const CashierLayout = ({ children }) => {
-  const sidebar = useSideBar()
-
-  return (
-    <div className="h-screen w-screen flex flex-col bg-background overflow-hidden">
-      <POSHeader onMenuClick={sidebar.openSidebar} />
-      <PosSidebar isOpen={sidebar.isOpen} onClose={sidebar.closeSidebar} />
-      <div className="flex-1 overflow-hidden">
-        {children}
-      </div>
-    </div>
-  )
-}
+import CashierLayout from '@/pages/cashier/layout/CashierLayout'
 
 const CashierRoutes = () => {
   return (
@@ -78,9 +62,9 @@ const CashierRoutes = () => {
           </CashierLayout>
         }
       />
+      <Route path="*" element={<Navigate to="/cashier" replace />} />
     </Routes>
   )
 }
 
 export default CashierRoutes
-

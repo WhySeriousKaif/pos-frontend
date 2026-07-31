@@ -101,7 +101,7 @@ const ShiftSummery = () => {
   const isShiftActive = shiftData && shiftData.shiftStart && !shiftData.shiftEnd;
 
   return (
-    <div className="h-full w-full flex flex-col bg-background">
+    <div className="h-full w-full flex flex-col bg-[#F8FAFE] dark:bg-[#0B1220]">
       <ShiftReportHeader
         onPrint={handlePrint}
         onEndShift={handleEndShift}

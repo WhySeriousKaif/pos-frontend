@@ -1,8 +1,9 @@
 import React from 'react'
 import { Provider } from 'react-redux'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Toaster } from 'sonner'
 import { store } from './store'
-import { ThemeProvider } from './contexts/ThemeContext'
+import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import CashierRoutes from './routes/CashierRoutes'
 import BranchRoutes from './routes/BranchRoutes'
 import StoreAdminRoutes from './routes/StoreAdminRoutes'
@@ -12,10 +13,16 @@ import ProtectedRoute from './components/ProtectedRoute'
 import LandingPage from './pages/landing/LandingPage'
 import ContactPage from './pages/contact/ContactPage'
 
+const AppToaster = () => {
+  const { darkMode } = useTheme()
+  return <Toaster theme={darkMode ? 'dark' : 'light'} position="top-right" richColors closeButton />
+}
+
 function App() {
   return (
     <Provider store={store}>
       <ThemeProvider>
+        <AppToaster />
         <BrowserRouter>
           <Routes>
             {/* Landing page - show for unauthenticated users */}

@@ -82,9 +82,9 @@ const RefundPage = () => {
   }
 
   return (
-    <div className="h-full flex flex-col bg-background">
+    <div className="h-full flex flex-col bg-[#F8FAFE] dark:bg-[#0B1220]">
       {/* Header */}
-      <div className="p-4 sm:p-6 border-b bg-card">
+      <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900">
         <h1 className="text-2xl sm:text-3xl font-bold mb-4">Return / Refund</h1>
         
         {!selectedOrder && (

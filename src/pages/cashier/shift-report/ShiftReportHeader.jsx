@@ -4,7 +4,7 @@ import { Printer, ArrowRight, Play } from 'lucide-react'
 
 const ShiftReportHeader = ({ onPrint, onEndShift, onStartShift, shiftStarted }) => {
   return (
-    <div className='p-4 border-b bg-card'>
+    <div className='p-4 border-b border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900'>
       <div className='flex items-center justify-between'>
         <h1 className='text-2xl font-bold'>Shift Summary</h1>
         <div className='flex items-center gap-2'>
