@@ -29,6 +29,7 @@ import {
   Phone,
 } from 'lucide-react'
 import { customerAPI, orderAPI } from '@/services/api'
+import { toast } from 'sonner'
 
 const CashierCustomersPage = () => {
   const [customers, setCustomers] = useState([])
@@ -106,7 +107,7 @@ const CashierCustomersPage = () => {
   const handleAddCustomer = async () => {
     try {
       if (!newCustomer.name) {
-        alert('Name is required')
+        toast.error('Name is required')
         return
       }
       
@@ -114,10 +115,10 @@ const CashierCustomersPage = () => {
       setIsAddDialogOpen(false)
       setNewCustomer({ name: '', email: '', phone: '' })
       fetchCustomers()
-      alert('Customer added successfully!')
+      toast.success('Customer added successfully!')
     } catch (error) {
       console.error('Error adding customer:', error)
-      alert(`Error adding customer: ${error.message}`)
+      toast.error(`Error adding customer: ${error.message}`)
     }
   }
 

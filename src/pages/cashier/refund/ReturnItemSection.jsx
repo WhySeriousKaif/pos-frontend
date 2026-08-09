@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Check } from 'lucide-react'
+import { toast } from 'sonner'
 
 const ReturnItemSection = ({ order, onProcessRefund, branchId, cashierId, shiftReportId }) => {
   const [returnItems, setReturnItems] = useState([])
@@ -71,12 +72,12 @@ const ReturnItemSection = ({ order, onProcessRefund, branchId, cashierId, shiftR
 
   const handleProcessRefund = () => {
     if (!returnReason || !refundMethod) {
-      alert('Please select return reason and refund method')
+      toast.error('Please select return reason and refund method')
       return
     }
 
     if (!hasReturnItems) {
-      alert('Please select at least one item to return')
+      toast.error('Please select at least one item to return')
       return
     }
 

@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { store } from './store'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
+import { ConfirmProvider } from './contexts/ConfirmContext'
 import CashierRoutes from './routes/CashierRoutes'
 import BranchRoutes from './routes/BranchRoutes'
 import StoreAdminRoutes from './routes/StoreAdminRoutes'
@@ -23,6 +24,7 @@ function App() {
     <Provider store={store}>
       <ThemeProvider>
         <AppToaster />
+        <ConfirmProvider>
         <BrowserRouter>
           <Routes>
             {/* Landing page - show for unauthenticated users */}
@@ -63,6 +65,7 @@ function App() {
             />
           </Routes>
         </BrowserRouter>
+        </ConfirmProvider>
       </ThemeProvider>
     </Provider>
   )

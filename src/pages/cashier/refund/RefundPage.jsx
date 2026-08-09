@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Search } from 'lucide-react'
 import { orderAPI, refundAPI, shiftReportAPI } from '@/services/api'
+import { toast } from 'sonner'
 import OrderTable from './OrderTable'
 import OrderDetails from './OrderDetails'
 import ReturnItemSection from './ReturnItemSection'
@@ -77,7 +78,7 @@ const RefundPage = () => {
       fetchOrders()
     } catch (error) {
       console.error('Error processing refund:', error)
-      alert(`Error processing refund: ${error.message || 'Unknown error'}`)
+      toast.error(`Error processing refund: ${error.message || 'Unknown error'}`)
     }
   }
 

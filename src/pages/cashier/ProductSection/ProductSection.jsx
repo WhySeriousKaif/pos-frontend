@@ -3,7 +3,7 @@ import { Barcode, Search } from "lucide-react";
 import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import ProductCard from "./ProductCard";
-import { productAPI } from "@/services/api";
+import { productAPI, userAPI } from "@/services/api";
 import { useCart } from "@/contexts/CartContext";
 import { cn } from "@/lib/utils";
 
@@ -27,7 +27,13 @@ const ProductSection = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await productAPI.getAll();
+      const profile = await userAPI.getProfile();
+      if (!profile?.storeId) {
+        setError('Your account is not assigned to a store. Contact your manager.');
+        setProducts([]);
+        return;
+      }
+      const data = await productAPI.getByStoreId(profile.storeId);
       setProducts(data || []);
     } catch (err) {
       console.error('Error fetching products:', err);

@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Search, Plus, RefreshCw, Edit, Trash2, MapPin, Phone, Mail, Users, Building2 } from 'lucide-react'
 import { branchAPI, userAPI, storeAPI } from '@/services/api'
+import { toast } from 'sonner'
+import { useConfirm } from '@/contexts/ConfirmContext'
+import NoStoreBanner from '@/components/NoStoreBanner'
 import {
   Dialog,
   DialogContent,
@@ -16,6 +19,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
 const BranchesPage = () => {
+  const confirm = useConfirm()
   const [branches, setBranches] = useState([])
   const [filteredBranches, setFilteredBranches] = useState([])
   const [loading, setLoading] = useState(true)
@@ -58,14 +62,19 @@ const BranchesPage = () => {
       const profile = await userAPI.getProfile()
       if (profile?.storeId) {
         setStoreId(profile.storeId)
-      } else {
-        const stores = await storeAPI.getByAdmin()
-        if (stores && stores.length > 0) {
-          setStoreId(stores[0].id)
-        }
+        return
       }
+      const stores = await storeAPI.getByAdmin()
+      if (stores && stores.length > 0) {
+        setStoreId(stores[0].id)
+        return
+      }
+      // No store yet — nothing will call setLoading(false) downstream, so do it here
+      // or this page spins forever instead of showing the "no store yet" banner.
+      setLoading(false)
     } catch (error) {
       console.error('Error fetching store ID:', error)
+      setLoading(false)
     }
   }
 
@@ -103,15 +112,23 @@ const BranchesPage = () => {
     filterBranches()
   }
 
+  const handleOpenAddDialog = () => {
+    if (!storeId) {
+      toast.error('Create a store first before adding a branch.')
+      return
+    }
+    setIsAddDialogOpen(true)
+  }
+
   const handleAddBranch = async () => {
     // Validate required fields
     if (!newBranch.name || !newBranch.name.trim()) {
-      alert('Please enter a branch name')
+      toast.error('Please enter a branch name')
       return
     }
 
     if (!storeId) {
-      alert('Store ID not found. Please refresh the page.')
+      toast.error('Store ID not found. Please refresh the page.')
       return
     }
 
@@ -119,7 +136,7 @@ const BranchesPage = () => {
     if (newBranch.email && newBranch.email.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(newBranch.email.trim())) {
-        alert('Please enter a valid email address')
+        toast.error('Please enter a valid email address')
         return
       }
     }
@@ -128,7 +145,7 @@ const BranchesPage = () => {
     if (newBranch.phone && newBranch.phone.trim()) {
       const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s.]?[(]?[0-9]{1,4}[)]?[-\s.]?[0-9]{1,9}$/
       if (!phoneRegex.test(newBranch.phone.trim())) {
-        alert('Please enter a valid phone number')
+        toast.error('Please enter a valid phone number')
         return
       }
     }
@@ -152,14 +169,14 @@ const BranchesPage = () => {
         email: '',
       })
       fetchBranches()
-      alert('Branch created successfully!')
+      toast.success('Branch created successfully!')
     } catch (error) {
       console.error('Error creating branch:', error)
       const errorMessage = error.message || 'Failed to create branch'
       if (errorMessage.includes('name') || errorMessage.includes('Name')) {
-        alert(`Branch name already exists. Please use a different name.\n\nError: ${errorMessage}`)
+        toast.error('Branch name already exists. Please use a different name.', { description: errorMessage })
       } else {
-        alert(`Failed to create branch: ${errorMessage}`)
+        toast.error(`Failed to create branch: ${errorMessage}`)
       }
     } finally {
       setCreating(false)
@@ -179,12 +196,12 @@ const BranchesPage = () => {
 
   const handleUpdateBranch = async () => {
     if (!editBranch.name) {
-      alert('Branch name is required')
+      toast.error('Branch name is required')
       return
     }
 
     if (!selectedBranch?.id) {
-      alert('Branch ID not found')
+      toast.error('Branch ID not found')
       return
     }
 
@@ -201,25 +218,31 @@ const BranchesPage = () => {
       setIsEditDialogOpen(false)
       setSelectedBranch(null)
       fetchBranches()
-      alert('Branch updated successfully!')
+      toast.success('Branch updated successfully!')
     } catch (error) {
       console.error('Error updating branch:', error)
-      alert(error.message || 'Failed to update branch')
+      toast.error(error.message || 'Failed to update branch')
     } finally {
       setUpdating(false)
     }
   }
 
   const handleDeleteBranch = async (id) => {
-    if (!confirm('Are you sure you want to delete this branch?')) return
+    const ok = await confirm({
+      title: 'Delete this branch?',
+      description: 'Are you sure you want to delete this branch?',
+      confirmLabel: 'Delete',
+      variant: 'destructive',
+    })
+    if (!ok) return
 
     try {
       await branchAPI.delete(id)
       fetchBranches()
-      alert('Branch deleted successfully!')
+      toast.success('Branch deleted successfully!')
     } catch (error) {
       console.error('Error deleting branch:', error)
-      alert('Failed to delete branch')
+      toast.error('Failed to delete branch')
     }
   }
 
@@ -235,12 +258,14 @@ const BranchesPage = () => {
             <RefreshCw className="size-4 mr-2" />
             Refresh
           </Button>
-          <Button onClick={() => setIsAddDialogOpen(true)}>
+          <Button onClick={handleOpenAddDialog}>
             <Plus className="size-4 mr-2" />
             Add Branch
           </Button>
         </div>
       </div>
+
+      {!storeId && !loading && <NoStoreBanner action="add branches" />}
 
       {/* Search Bar */}
       <Card className="mb-6">

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Building2, Save, RefreshCw, User, Upload, X } from 'lucide-react'
 import { branchAPI, userAPI } from '@/services/api'
+import { toast } from 'sonner'
 
 const CashierSettingsPage = () => {
   const [branchInfo, setBranchInfo] = useState({
@@ -56,13 +57,13 @@ const CashierSettingsPage = () => {
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('Please select an image file')
+        toast.error('Please select an image file')
         return
       }
       
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('Image size should be less than 5MB')
+        toast.error('Image size should be less than 5MB')
         return
       }
       
@@ -109,21 +110,21 @@ const CashierSettingsPage = () => {
 
   const handleSave = async () => {
     if (!branchId) {
-      alert('Branch ID not found. Please refresh the page.')
+      toast.error('Branch ID not found. Please refresh the page.')
       return
     }
 
     try {
       setSaving(true)
       await branchAPI.update(branchId, branchInfo)
-      alert('Branch information updated successfully!')
+      toast.success('Branch information updated successfully!')
       // Refresh branch info after update
       await fetchBranchInfo()
       // Dispatch custom event to notify sidebar to refresh
       window.dispatchEvent(new CustomEvent('branchInfoUpdated'))
     } catch (error) {
       console.error('Error saving settings:', error)
-      alert(`Error saving settings: ${error.message}`)
+      toast.error(`Error saving settings: ${error.message}`)
     } finally {
       setSaving(false)
     }

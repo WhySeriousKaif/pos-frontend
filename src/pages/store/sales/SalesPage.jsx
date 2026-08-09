@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -51,7 +52,8 @@ const SalesPage = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('all')
-  
+  const [branchFilter, setBranchFilter] = useState('all')
+
   // Statistics
   const [stats, setStats] = useState({
     totalSales: 0,
@@ -59,10 +61,11 @@ const SalesPage = () => {
     activeCashiers: 0,
     avgOrderValue: 0,
   })
-  
+
   // Chart data
   const [salesData, setSalesData] = useState([])
   const [paymentData, setPaymentData] = useState([])
+  const [branchSalesData, setBranchSalesData] = useState([])
 
   useEffect(() => {
     fetchStoreId()
@@ -76,7 +79,7 @@ const SalesPage = () => {
 
   useEffect(() => {
     filterOrders()
-  }, [searchQuery, statusFilter, paymentMethodFilter, allOrders])
+  }, [searchQuery, statusFilter, paymentMethodFilter, branchFilter, allOrders])
 
   const fetchStoreId = async () => {
     try {
@@ -213,6 +216,27 @@ const SalesPage = () => {
           value,
         }))
       )
+
+      // Sales broken down by branch — this is what makes it possible to see whether
+      // one branch is carrying the store or several are contributing evenly.
+      const salesByBranch = {}
+      orders.forEach((order) => {
+        const branchId = order.branch?.id
+        if (!branchId) return
+        if (!salesByBranch[branchId]) {
+          salesByBranch[branchId] = { branchId, sales: 0, orders: 0 }
+        }
+        salesByBranch[branchId].sales += order.totalAmount || 0
+        salesByBranch[branchId].orders += 1
+      })
+
+      setBranchSalesData(
+        branchesData.map((branch) => ({
+          name: branch.name || `Branch ${branch.id}`,
+          sales: salesByBranch[branch.id]?.sales || 0,
+          orders: salesByBranch[branch.id]?.orders || 0,
+        }))
+      )
     } catch (error) {
       console.error('Error fetching sales data:', error)
     } finally {
@@ -244,6 +268,11 @@ const SalesPage = () => {
     // Payment method filter
     if (paymentMethodFilter !== 'all') {
       filtered = filtered.filter((order) => order.paymentType === paymentMethodFilter)
+    }
+
+    // Branch filter
+    if (branchFilter !== 'all') {
+      filtered = filtered.filter((order) => order.branch?.id?.toString() === branchFilter)
     }
 
     // Sort by date (newest first)
@@ -304,9 +333,10 @@ const SalesPage = () => {
 
   const handleExport = () => {
     // Create CSV content
-    const headers = ['Date', 'Customer', 'Cashier', 'Amount', 'Payment Method', 'Status']
+    const headers = ['Date', 'Branch', 'Customer', 'Cashier', 'Amount', 'Payment Method', 'Status']
     const rows = filteredOrders.map(order => [
       formatDate(order.createdAt),
+      order.branch?.name || 'Unknown',
       order.customer?.name || order.customer?.fullName || 'Unknown',
       order.cashier?.fullName || order.cashier?.email || 'Unknown',
       order.totalAmount || 0,
@@ -460,6 +490,27 @@ const SalesPage = () => {
         </Card>
       </div>
 
+      {/* Branch Comparison */}
+      {branchSalesData.length > 1 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Sales by Branch</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={branchSalesData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip formatter={(value) => formatCurrency(value)} />
+                <Legend />
+                <Bar dataKey="sales" fill="#f59e0b" name="Sales" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Sales Table */}
       <Card>
         <CardHeader>
@@ -499,6 +550,19 @@ const SalesPage = () => {
                   <SelectItem value="UPI">UPI</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={branchFilter} onValueChange={setBranchFilter}>
+                <SelectTrigger className="w-full sm:w-[160px]">
+                  <SelectValue placeholder="All Branches" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Branches</SelectItem>
+                  {branches.map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id.toString()}>
+                      {branch.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button variant="outline" onClick={handleExport}>
                 <Download className="size-4 mr-2" />
                 Export
@@ -518,6 +582,7 @@ const SalesPage = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
+                    <TableHead>Branch</TableHead>
                     <TableHead>Customer</TableHead>
                     <TableHead>Cashier</TableHead>
                     <TableHead>Amount</TableHead>
@@ -530,6 +595,7 @@ const SalesPage = () => {
                   {filteredOrders.map((order) => (
                     <TableRow key={order.id}>
                       <TableCell>{formatDate(order.createdAt)}</TableCell>
+                      <TableCell>{order.branch?.name || 'Unknown'}</TableCell>
                       <TableCell className="font-medium">
                         {order.customer?.name || order.customer?.fullName || 'Unknown Customer'}
                       </TableCell>
@@ -557,7 +623,9 @@ const SalesPage = () => {
                             className="h-8 w-8 p-0"
                             onClick={() => {
                               // View order details - can be expanded to show full order dialog
-                              alert(`Order ID: ${order.id}\nCustomer: ${order.customer?.name || order.customer?.fullName || 'Unknown'}\nAmount: ${formatCurrency(order.totalAmount || 0)}\nStatus: ${getStatusLabel(order.status)}`)
+                              toast('Order Details', {
+                                description: `Order ID: ${order.id}\nCustomer: ${order.customer?.name || order.customer?.fullName || 'Unknown'}\nAmount: ${formatCurrency(order.totalAmount || 0)}\nStatus: ${getStatusLabel(order.status)}`,
+                              })
                             }}
                             title="View Order Details"
                           >

@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Search, Plus, RefreshCw, Edit, Trash2, Tag, Package } from 'lucide-react'
 import { categoryAPI, userAPI, storeAPI, productAPI } from '@/services/api'
+import { toast } from 'sonner'
+import { useConfirm } from '@/contexts/ConfirmContext'
+import NoStoreBanner from '@/components/NoStoreBanner'
 import {
   Dialog,
   DialogContent,
@@ -16,6 +19,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
 const CategoriesPage = () => {
+  const confirm = useConfirm()
   const [categories, setCategories] = useState([])
   const [filteredCategories, setFilteredCategories] = useState([])
   const [loading, setLoading] = useState(true)
@@ -56,14 +60,19 @@ const CategoriesPage = () => {
       const profile = await userAPI.getProfile()
       if (profile?.storeId) {
         setStoreId(profile.storeId)
-      } else {
-        const stores = await storeAPI.getByAdmin()
-        if (stores && stores.length > 0) {
-          setStoreId(stores[0].id)
-        }
+        return
       }
+      const stores = await storeAPI.getByAdmin()
+      if (stores && stores.length > 0) {
+        setStoreId(stores[0].id)
+        return
+      }
+      // No store yet — nothing will call setLoading(false) downstream, so do it here
+      // or this page spins forever instead of showing the "no store yet" banner.
+      setLoading(false)
     } catch (error) {
       console.error('Error fetching store ID:', error)
+      setLoading(false)
     }
   }
 
@@ -115,10 +124,18 @@ const CategoriesPage = () => {
     filterCategories()
   }
 
+  const handleOpenAddDialog = () => {
+    if (!storeId) {
+      toast.error('Create a store first before adding a category.')
+      return
+    }
+    setIsAddDialogOpen(true)
+  }
+
   const handleAddCategory = async () => {
     // Validate required fields
     if (!newCategory.name || !newCategory.name.trim()) {
-      alert('Please enter a category name')
+      toast.error('Please enter a category name')
       return
     }
 
@@ -127,12 +144,12 @@ const CategoriesPage = () => {
       cat => cat.name.toLowerCase().trim() === newCategory.name.toLowerCase().trim()
     )
     if (duplicateCategory) {
-      alert(`Category "${newCategory.name.trim()}" already exists. Please use a different name.`)
+      toast.error(`Category "${newCategory.name.trim()}" already exists. Please use a different name.`)
       return
     }
 
     if (!storeId) {
-      alert('Store ID not found. Please refresh the page.')
+      toast.error('Store ID not found. Please refresh the page.')
       return
     }
 
@@ -150,14 +167,14 @@ const CategoriesPage = () => {
       setNewCategory({ name: '', description: '' })
       await fetchCategories()
       await fetchProductCounts() // Refresh product counts
-      alert('Category created successfully!')
+      toast.success('Category created successfully!')
     } catch (error) {
       console.error('Error creating category:', error)
       const errorMessage = error.message || 'Failed to create category'
       if (errorMessage.includes('name') || errorMessage.includes('Name') || errorMessage.includes('duplicate')) {
-        alert(`Category name already exists. Please use a different name.\n\nError: ${errorMessage}`)
+        toast.error('Category name already exists. Please use a different name.', { description: errorMessage })
       } else {
-        alert(`Failed to create category: ${errorMessage}`)
+        toast.error(`Failed to create category: ${errorMessage}`)
       }
     } finally {
       setCreating(false)
@@ -175,12 +192,12 @@ const CategoriesPage = () => {
 
   const handleUpdateCategory = async () => {
     if (!editCategory.name) {
-      alert('Category name is required')
+      toast.error('Category name is required')
       return
     }
 
     if (!selectedCategory?.id) {
-      alert('Category ID not found')
+      toast.error('Category ID not found')
       return
     }
 
@@ -195,26 +212,32 @@ const CategoriesPage = () => {
       setIsEditDialogOpen(false)
       setSelectedCategory(null)
       await fetchCategories()
-      alert('Category updated successfully!')
+      toast.success('Category updated successfully!')
     } catch (error) {
       console.error('Error updating category:', error)
-      alert(error.message || 'Failed to update category')
+      toast.error(error.message || 'Failed to update category')
     } finally {
       setUpdating(false)
     }
   }
 
   const handleDeleteCategory = async (id) => {
-    if (!confirm('Are you sure you want to delete this category? Products in this category will not be deleted, but they will lose their category association.')) return
+    const ok = await confirm({
+      title: 'Delete this category?',
+      description: 'Products in this category will not be deleted, but they will lose their category association.',
+      confirmLabel: 'Delete',
+      variant: 'destructive',
+    })
+    if (!ok) return
 
     try {
       await categoryAPI.delete(id)
       await fetchCategories()
       await fetchProductCounts() // Refresh product counts
-      alert('Category deleted successfully!')
+      toast.success('Category deleted successfully!')
     } catch (error) {
       console.error('Error deleting category:', error)
-      alert('Failed to delete category')
+      toast.error('Failed to delete category')
     }
   }
 
@@ -230,12 +253,14 @@ const CategoriesPage = () => {
             <RefreshCw className="size-4 mr-2" />
             Refresh
           </Button>
-          <Button onClick={() => setIsAddDialogOpen(true)}>
+          <Button onClick={handleOpenAddDialog}>
             <Plus className="size-4 mr-2" />
             Add Category
           </Button>
         </div>
       </div>
+
+      {!storeId && !loading && <NoStoreBanner action="add categories" />}
 
       {/* Search Bar */}
       <Card className="mb-6">

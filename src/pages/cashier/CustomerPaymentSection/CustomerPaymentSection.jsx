@@ -129,7 +129,7 @@ const CustomerPaymentSection = () => {
           key: key || "rzp_test_MwXi3d9f7g1t8Z",
           amount: amount,
           currency: currency || "INR",
-          name: "Molla POS",
+          name: "Bilix POS",
           description: paymentType === 'UPI' ? 'UPI Payment' : 'Card Payment',
           order_id: order_id,
           handler: async function (response) {

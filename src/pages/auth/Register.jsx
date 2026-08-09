@@ -4,13 +4,6 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { registerUser, clearError } from '@/store/slices/authSlice'
 import { Eye, EyeOff, Mail, Lock, User, Phone } from 'lucide-react'
 
@@ -19,12 +12,14 @@ const Register = () => {
   const navigate = useNavigate()
   const { loading, error, isAuthenticated, user } = useSelector((state) => state.auth)
 
+  // Public signup always creates a Store Admin (the business owner). Branch Managers
+  // and Cashiers are created from inside the app by the level above them, not here.
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     password: '',
     phone: '',
-    role: 'ROLE_BRANCH_CASHIER',
+    role: 'ROLE_STORE_ADMIN',
   })
   const [showPassword, setShowPassword] = useState(false)
 
@@ -32,7 +27,9 @@ const Register = () => {
     // Redirect if already authenticated
     if (isAuthenticated && user) {
       const role = user.role
-      if (role === 'ROLE_BRANCH_MANAGER' || role === 'ROLE_STORE_MANAGER') {
+      if (role === 'ROLE_STORE_ADMIN' || role === 'ROLE_STORE_MANAGER') {
+        navigate('/store')
+      } else if (role === 'ROLE_BRANCH_MANAGER') {
         navigate('/branch')
       } else if (role === 'ROLE_BRANCH_CASHIER' || role === 'ROLE_CASHIER') {
         navigate('/cashier')
@@ -54,16 +51,6 @@ const Register = () => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
-    })
-    if (error) {
-      dispatch(clearError())
-    }
-  }
-
-  const handleRoleChange = (value) => {
-    setFormData({
-      ...formData,
-      role: value,
     })
     if (error) {
       dispatch(clearError())
@@ -104,9 +91,9 @@ const Register = () => {
 
       <Card className="w-full">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-3xl font-bold">Create Account</CardTitle>
+          <CardTitle className="text-3xl font-bold">Create Your Store Account</CardTitle>
           <CardDescription>
-            Enter your information to create a new account
+            Sign up to register your business. You can add branch managers and cashiers after logging in.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -171,21 +158,6 @@ const Register = () => {
                   className="pl-10"
                 />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="role" className="text-sm font-medium">
-                Role
-              </label>
-              <Select value={formData.role} onValueChange={handleRoleChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ROLE_BRANCH_CASHIER">Cashier</SelectItem>
-                  <SelectItem value="ROLE_BRANCH_MANAGER">Branch Manager</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             <div className="space-y-2">

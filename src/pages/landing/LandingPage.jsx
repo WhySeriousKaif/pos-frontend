@@ -39,7 +39,7 @@ const LandingPage = () => {
         setPricingPlans(
           active.map((plan, index) => ({
             name: plan.name,
-            price: `$${plan.price.toLocaleString()}`,
+            price: `₹${plan.price.toLocaleString()}`,
             period: '/month',
             popular: index === 1 || (active.length === 1 && index === 0),
             features: (plan.features || '').split(',').map((f) => f.trim()).filter(Boolean),

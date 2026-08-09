@@ -4,9 +4,12 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { RefreshCw, Check, X, Clock, Store, Mail, Phone, MapPin } from 'lucide-react'
 import { format } from 'date-fns'
+import { toast } from 'sonner'
 import { storeAPI } from '@/services/api'
+import { useConfirm } from '@/contexts/ConfirmContext'
 
 const PendingRequestsPage = () => {
+  const confirm = useConfirm()
   const [pendingStores, setPendingStores] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -32,23 +35,29 @@ const PendingRequestsPage = () => {
     try {
       await storeAPI.moderate(storeId, 'ACTIVE')
       await fetchPendingRequests()
-      alert('Store approved successfully!')
+      toast.success('Store approved successfully!')
     } catch (error) {
       console.error('Error approving store:', error)
-      alert('Failed to approve store')
+      toast.error('Failed to approve store')
     }
   }
 
   const handleReject = async (storeId) => {
-    if (!confirm('Are you sure you want to reject this store request?')) return
-    
+    const ok = await confirm({
+      title: 'Reject this store request?',
+      description: 'Are you sure you want to reject this store request?',
+      confirmLabel: 'Reject',
+      variant: 'destructive',
+    })
+    if (!ok) return
+
     try {
       await storeAPI.moderate(storeId, 'BLOCKED')
       await fetchPendingRequests()
-      alert('Store request rejected')
+      toast.success('Store request rejected')
     } catch (error) {
       console.error('Error rejecting store:', error)
-      alert('Failed to reject store')
+      toast.error('Failed to reject store')
     }
   }
 

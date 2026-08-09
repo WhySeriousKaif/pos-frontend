@@ -15,6 +15,7 @@ import {
   Database,
   Server,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { userAPI, settingsAPI } from '@/services/api'
 
 const SuperAdminSettingsPage = () => {
@@ -63,10 +64,10 @@ const SuperAdminSettingsPage = () => {
       setSaving(true)
       const updated = await settingsAPI.update(settings)
       setSettings((prev) => ({ ...prev, ...updated }))
-      alert('Settings saved successfully!')
+      toast.success('Settings saved successfully!')
     } catch (error) {
       console.error('Error saving settings:', error)
-      alert('Failed to save settings')
+      toast.error('Failed to save settings')
     } finally {
       setSaving(false)
     }

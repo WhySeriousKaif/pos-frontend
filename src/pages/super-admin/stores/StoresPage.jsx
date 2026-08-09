@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Search, RefreshCw, Check, X, Eye, Store, MapPin, Phone, Mail, Hash, Calendar, Tag, FileText } from 'lucide-react'
 import { format } from 'date-fns'
+import { toast } from 'sonner'
 import { storeAPI } from '@/services/api'
 
 const StoresPage = () => {
@@ -56,10 +57,10 @@ const StoresPage = () => {
     try {
       await storeAPI.moderate(storeId, status)
       await fetchStores()
-      alert(`Store ${status === 'ACTIVE' ? 'approved' : 'blocked'} successfully!`)
+      toast.success(`Store ${status === 'ACTIVE' ? 'approved' : 'blocked'} successfully!`)
     } catch (error) {
       console.error('Error moderating store:', error)
-      alert('Failed to update store status')
+      toast.error('Failed to update store status')
     }
   }
 

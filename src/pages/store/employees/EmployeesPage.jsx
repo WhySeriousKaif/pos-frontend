@@ -6,6 +6,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Search, Plus, RefreshCw, Edit, Trash2, Mail, Phone, MapPin, Users } from 'lucide-react'
 import { employeeAPI, userAPI, storeAPI, branchAPI } from '@/services/api'
 import { toast } from 'sonner'
+import { useConfirm } from '@/contexts/ConfirmContext'
+import NoStoreBanner from '@/components/NoStoreBanner'
 import {
   Dialog,
   DialogContent,
@@ -23,11 +25,13 @@ import {
 } from '@/components/ui/select'
 
 const EmployeesPage = () => {
+  const confirm = useConfirm()
   const [employees, setEmployees] = useState([])
   const [filteredEmployees, setFilteredEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [storeId, setStoreId] = useState(null)
+  const [currentUserId, setCurrentUserId] = useState(null)
   const [branches, setBranches] = useState([])
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -77,16 +81,22 @@ const EmployeesPage = () => {
   const fetchStoreId = async () => {
     try {
       const profile = await userAPI.getProfile()
+      setCurrentUserId(profile?.id ?? null)
       if (profile?.storeId) {
         setStoreId(profile.storeId)
-      } else {
-        const stores = await storeAPI.getByAdmin()
-        if (stores && stores.length > 0) {
-          setStoreId(stores[0].id)
-        }
+        return
       }
+      const stores = await storeAPI.getByAdmin()
+      if (stores && stores.length > 0) {
+        setStoreId(stores[0].id)
+        return
+      }
+      // No store yet — nothing will call setLoading(false) downstream, so do it here
+      // or this page spins forever instead of showing the "no store yet" banner.
+      setLoading(false)
     } catch (error) {
       console.error('Error fetching store ID:', error)
+      setLoading(false)
     }
   }
 
@@ -132,6 +142,14 @@ const EmployeesPage = () => {
   const handleSearch = (e) => {
     e.preventDefault()
     filterEmployees()
+  }
+
+  const handleOpenAddDialog = () => {
+    if (!storeId) {
+      toast.error('Create a store first before adding an employee.')
+      return
+    }
+    setIsAddDialogOpen(true)
   }
 
   const handleAddEmployee = async () => {
@@ -288,7 +306,13 @@ const EmployeesPage = () => {
   }
 
   const handleDeleteEmployee = async (id) => {
-    if (!confirm('Are you sure you want to delete this employee?')) return
+    const ok = await confirm({
+      title: 'Delete this employee?',
+      description: 'Are you sure you want to delete this employee?',
+      confirmLabel: 'Delete',
+      variant: 'destructive',
+    })
+    if (!ok) return
 
     try {
       await employeeAPI.deleteEmployee(id)
@@ -324,12 +348,14 @@ const EmployeesPage = () => {
             <RefreshCw className="size-4 mr-2" />
             Refresh
           </Button>
-          <Button onClick={() => setIsAddDialogOpen(true)}>
+          <Button onClick={handleOpenAddDialog}>
             <Plus className="size-4 mr-2" />
             Add Employee
           </Button>
         </div>
       </div>
+
+      {!storeId && !loading && <NoStoreBanner action="add employees" />}
 
       {/* Search Bar */}
       <Card className="mb-6">
@@ -429,14 +455,16 @@ const EmployeesPage = () => {
                           >
                             <Edit className="size-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
-                            onClick={() => handleDeleteEmployee(employee.id)}
-                          >
-                            <Trash2 className="size-4" />
-                          </Button>
+                          {employee.id !== currentUserId && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                              onClick={() => handleDeleteEmployee(employee.id)}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

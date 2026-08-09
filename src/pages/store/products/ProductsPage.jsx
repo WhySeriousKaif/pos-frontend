@@ -22,8 +22,12 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { uploadToCloudinary } from '@/utils/cloudinary'
+import { toast } from 'sonner'
+import { useConfirm } from '@/contexts/ConfirmContext'
+import NoStoreBanner from '@/components/NoStoreBanner'
 
 const ProductsPage = () => {
+  const confirm = useConfirm()
   const [products, setProducts] = useState([])
   const [filteredProducts, setFilteredProducts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -103,14 +107,19 @@ const ProductsPage = () => {
       const profile = await userAPI.getProfile()
       if (profile?.storeId) {
         setStoreId(profile.storeId)
-      } else {
-        const stores = await storeAPI.getByAdmin()
-        if (stores && stores.length > 0) {
-          setStoreId(stores[0].id)
-        }
+        return
       }
+      const stores = await storeAPI.getByAdmin()
+      if (stores && stores.length > 0) {
+        setStoreId(stores[0].id)
+        return
+      }
+      // No store yet — nothing will call setLoading(false) downstream, so do it here
+      // or this page spins forever instead of showing the "no store yet" banner.
+      setLoading(false)
     } catch (error) {
       console.error('Error fetching store ID:', error)
+      setLoading(false)
     }
   }
 
@@ -157,6 +166,14 @@ const ProductsPage = () => {
   const handleSearch = (e) => {
     e.preventDefault()
     filterProducts()
+  }
+
+  const handleOpenAddDialog = () => {
+    if (!storeId) {
+      toast.error('Create a store first before adding a product.')
+      return
+    }
+    setIsAddDialogOpen(true)
   }
 
   const getProductImage = (product) => {
@@ -207,12 +224,12 @@ const ProductsPage = () => {
 
   const handleUpdateProduct = async () => {
     if (!editProduct.name || !editProduct.sku) {
-      alert('Please fill in all required fields (Name, SKU)')
+      toast.error('Please fill in all required fields (Name, SKU)')
       return
     }
 
     if (!editingProduct?.id) {
-      alert('Product ID not found')
+      toast.error('Product ID not found')
       return
     }
 
@@ -220,7 +237,7 @@ const ProductsPage = () => {
     let finalCategoryId = null
     if (editProduct.categoryId === 'other') {
       if (!editProduct.customCategory) {
-        alert('Please enter a category name')
+        toast.error('Please enter a category name')
         return
       }
       try {
@@ -231,7 +248,7 @@ const ProductsPage = () => {
         finalCategoryId = newCategory.id
       } catch (error) {
         console.error('Error creating category:', error)
-        alert('Failed to create category. Please try again.')
+        toast.error('Failed to create category. Please try again.')
         return
       }
     } else if (editProduct.categoryId) {
@@ -247,7 +264,7 @@ const ProductsPage = () => {
           finalCategoryId = newCategory.id
         } catch (error) {
           console.error('Error creating category:', error)
-          alert('Failed to create category. Please try again.')
+          toast.error('Failed to create category. Please try again.')
           return
         }
       } else {
@@ -278,10 +295,10 @@ const ProductsPage = () => {
       setEditImagePreview(null)
       setEditImageFile(null)
       fetchProducts()
-      alert('Product updated successfully!')
+      toast.success('Product updated successfully!')
     } catch (error) {
       console.error('Error updating product:', error)
-      alert('Failed to update product')
+      toast.error('Failed to update product')
     } finally {
       setUpdating(false)
     }
@@ -290,11 +307,11 @@ const ProductsPage = () => {
   const handleEditImageUpload = async (file) => {
     if (!file) return
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file')
+      toast.error('Please select an image file')
       return
     }
     if (file.size > 10 * 1024 * 1024) {
-      alert('Image size should be less than 10MB')
+      toast.error('Image size should be less than 10MB')
       return
     }
     try {
@@ -305,21 +322,27 @@ const ProductsPage = () => {
       setEditImageFile(file)
     } catch (error) {
       console.error('Error uploading image:', error)
-      alert(error.message || 'Failed to upload image')
+      toast.error(error.message || 'Failed to upload image')
     } finally {
       setUploadingImage(false)
     }
   }
 
   const handleDeleteProduct = async (id) => {
-    if (!confirm('Are you sure you want to delete this product?')) return
-    
+    const ok = await confirm({
+      title: 'Delete this product?',
+      description: 'Are you sure you want to delete this product? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      variant: 'destructive',
+    })
+    if (!ok) return
+
     try {
       await productAPI.delete(id)
       fetchProducts()
     } catch (error) {
       console.error('Error deleting product:', error)
-      alert('Failed to delete product')
+      toast.error('Failed to delete product')
     }
   }
 
@@ -328,13 +351,13 @@ const ProductsPage = () => {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file')
+      toast.error('Please select an image file')
       return
     }
 
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      alert('Image size should be less than 10MB')
+      toast.error('Image size should be less than 10MB')
       return
     }
 
@@ -347,7 +370,7 @@ const ProductsPage = () => {
       setImageFile(file)
     } catch (error) {
       console.error('Error uploading image:', error)
-      alert(error.message || 'Failed to upload image')
+      toast.error(error.message || 'Failed to upload image')
     } finally {
       setUploadingImage(false)
     }
@@ -377,31 +400,31 @@ const ProductsPage = () => {
   const handleCreateProduct = async () => {
     // Validate required fields
     if (!newProduct.name || !newProduct.name.trim()) {
-      alert('Please enter a product name')
+      toast.error('Please enter a product name')
       return
     }
 
     if (!newProduct.sku || !newProduct.sku.trim()) {
-      alert('Please enter a SKU (Stock Keeping Unit)')
+      toast.error('Please enter a SKU (Stock Keeping Unit)')
       return
     }
 
     // Validate selling price
     if (!newProduct.sellingPrice || parseFloat(newProduct.sellingPrice) <= 0) {
-      alert('Please enter a valid selling price (must be greater than 0)')
+      toast.error('Please enter a valid selling price (must be greater than 0)')
       return
     }
 
     // Validate MRP if provided
     if (newProduct.mrp && parseFloat(newProduct.mrp) < 0) {
-      alert('MRP cannot be negative')
+      toast.error('MRP cannot be negative')
       return
     }
 
     // Validate quantity
     const quantity = parseInt(newProduct.quantity) || 0
     if (quantity < 0) {
-      alert('Quantity cannot be negative')
+      toast.error('Quantity cannot be negative')
       return
     }
 
@@ -409,7 +432,7 @@ const ProductsPage = () => {
     let finalCategoryId = null
     if (newProduct.categoryId === 'other') {
       if (!newProduct.customCategory || !newProduct.customCategory.trim()) {
-        alert('Please enter a category name')
+        toast.error('Please enter a category name')
         return
       }
       // Create new category first
@@ -421,7 +444,7 @@ const ProductsPage = () => {
         finalCategoryId = newCategory.id
       } catch (error) {
         console.error('Error creating category:', error)
-        alert(error.message || 'Failed to create category. Please try again.')
+        toast.error(error.message || 'Failed to create category. Please try again.')
         return
       }
     } else if (newProduct.categoryId) {
@@ -439,19 +462,19 @@ const ProductsPage = () => {
           finalCategoryId = newCategory.id
         } catch (error) {
           console.error('Error creating category:', error)
-          alert(error.message || 'Failed to create category. Please try again.')
+          toast.error(error.message || 'Failed to create category. Please try again.')
           return
         }
       } else {
         finalCategoryId = parseInt(newProduct.categoryId)
       }
     } else {
-      alert('Please select or enter a category')
+      toast.error('Please select or enter a category')
       return
     }
 
     if (!storeId) {
-      alert('Store ID not found. Please refresh the page.')
+      toast.error('Store ID not found. Please refresh the page.')
       return
     }
 
@@ -489,14 +512,14 @@ const ProductsPage = () => {
       setImageFile(null)
       fetchProducts()
       fetchCategories() // Refresh categories list
-      alert('Product created successfully!')
+      toast.success('Product created successfully!')
     } catch (error) {
       console.error('Error creating product:', error)
       const errorMessage = error.message || 'Failed to create product'
       if (errorMessage.includes('SKU') || errorMessage.includes('sku')) {
-        alert(`SKU already exists. Please use a unique SKU.\n\nError: ${errorMessage}`)
+        toast.error('SKU already exists. Please use a unique SKU.', { description: errorMessage })
       } else {
-        alert(`Failed to create product: ${errorMessage}`)
+        toast.error(`Failed to create product: ${errorMessage}`)
       }
     } finally {
       setCreating(false)
@@ -515,12 +538,14 @@ const ProductsPage = () => {
             <RefreshCw className="size-4 mr-2" />
             Refresh
           </Button>
-          <Button onClick={() => setIsAddDialogOpen(true)}>
+          <Button onClick={handleOpenAddDialog}>
             <Plus className="size-4 mr-2" />
             Add Product
           </Button>
         </div>
       </div>
+
+      {!storeId && !loading && <NoStoreBanner action="add products" />}
 
       {/* Search Bar */}
       <Card className="mb-6">

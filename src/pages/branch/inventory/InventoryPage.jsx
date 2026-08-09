@@ -47,6 +47,7 @@ const InventoryPage = () => {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [branchId, setBranchId] = useState(null)
+  const [storeId, setStoreId] = useState(null)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
@@ -59,7 +60,6 @@ const InventoryPage = () => {
 
   useEffect(() => {
     fetchBranchId()
-    fetchProducts()
   }, [])
 
   useEffect(() => {
@@ -69,12 +69,18 @@ const InventoryPage = () => {
   }, [branchId])
 
   useEffect(() => {
+    if (storeId) {
+      fetchProducts()
+    }
+  }, [storeId])
+
+  useEffect(() => {
     filterInventory()
   }, [searchQuery, inventory])
 
   const fetchProducts = async () => {
     try {
-      const data = await productAPI.getAll()
+      const data = await productAPI.getByStoreId(storeId)
       setProducts(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error fetching products:', error)
@@ -89,6 +95,9 @@ const InventoryPage = () => {
         setBranchId(profile.branchId)
       } else {
         setBranchId(1)
+      }
+      if (profile?.storeId) {
+        setStoreId(profile.storeId)
       }
     } catch (error) {
       console.error('Error fetching branch ID:', error)

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -41,6 +42,7 @@ const TransactionsPage = () => {
   const [dateFilter, setDateFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('all')
+  const [branchFilter, setBranchFilter] = useState('all')
   
   // Statistics
   const [stats, setStats] = useState({
@@ -61,7 +63,7 @@ const TransactionsPage = () => {
 
   useEffect(() => {
     filterTransactions()
-  }, [dateFilter, typeFilter, paymentMethodFilter, transactions])
+  }, [dateFilter, typeFilter, paymentMethodFilter, branchFilter, transactions])
 
   const fetchStoreId = async () => {
     try {
@@ -207,6 +209,11 @@ const TransactionsPage = () => {
       filtered = filtered.filter((transaction) => transaction.paymentMethod === paymentMethodFilter)
     }
 
+    // Branch filter
+    if (branchFilter !== 'all') {
+      filtered = filtered.filter((transaction) => transaction.branch?.id?.toString() === branchFilter)
+    }
+
     setFilteredTransactions(filtered)
   }
 
@@ -214,12 +221,13 @@ const TransactionsPage = () => {
     setDateFilter('all')
     setTypeFilter('all')
     setPaymentMethodFilter('all')
+    setBranchFilter('all')
   }
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount)
@@ -265,9 +273,10 @@ const TransactionsPage = () => {
 
   const handleExport = () => {
     // Create CSV content
-    const headers = ['Date & Time', 'Reference', 'Type', 'Description', 'Amount', 'Payment Method', 'Status']
+    const headers = ['Date & Time', 'Branch', 'Reference', 'Type', 'Description', 'Amount', 'Payment Method', 'Status']
     const rows = filteredTransactions.map(transaction => [
       formatDateTime(transaction.date),
+      transaction.branch?.name || 'Unknown',
       transaction.reference,
       transaction.type,
       transaction.description,
@@ -397,6 +406,20 @@ const TransactionsPage = () => {
               </SelectContent>
             </Select>
 
+            <Select value={branchFilter} onValueChange={setBranchFilter}>
+              <SelectTrigger className="w-full sm:w-[160px]">
+                <SelectValue placeholder="All Branches" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Branches</SelectItem>
+                {branches.map((branch) => (
+                  <SelectItem key={branch.id} value={branch.id.toString()}>
+                    {branch.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Button variant="outline" onClick={handleResetFilters} className="flex-1 sm:flex-initial">
               <RefreshCw className="size-4 mr-2" />
               Reset Filters
@@ -427,6 +450,7 @@ const TransactionsPage = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date & Time</TableHead>
+                    <TableHead>Branch</TableHead>
                     <TableHead>Reference</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Description</TableHead>
@@ -440,6 +464,7 @@ const TransactionsPage = () => {
                   {filteredTransactions.map((transaction) => (
                     <TableRow key={transaction.id}>
                       <TableCell>{formatDateTime(transaction.date)}</TableCell>
+                      <TableCell>{transaction.branch?.name || 'Unknown'}</TableCell>
                       <TableCell className="font-mono text-sm">
                         {transaction.reference}
                       </TableCell>
@@ -484,8 +509,8 @@ const TransactionsPage = () => {
                           className="h-8 w-8 p-0"
                           onClick={() => {
                             // View transaction details
-                            const details = `Transaction Details\n\nReference: ${transaction.reference}\nType: ${transaction.type}\nDate: ${formatDateTime(transaction.date)}\nDescription: ${transaction.description}\nAmount: ${transaction.type === 'Sale' ? '+' : '-'}${formatCurrency(transaction.amount)}\nPayment Method: ${getPaymentMethodLabel(transaction.paymentMethod)}\nStatus: ${getStatusLabel(transaction.status)}`
-                            alert(details)
+                            const details = `Reference: ${transaction.reference}\nType: ${transaction.type}\nDate: ${formatDateTime(transaction.date)}\nDescription: ${transaction.description}\nAmount: ${transaction.type === 'Sale' ? '+' : '-'}${formatCurrency(transaction.amount)}\nPayment Method: ${getPaymentMethodLabel(transaction.paymentMethod)}\nStatus: ${getStatusLabel(transaction.status)}`
+                            toast('Transaction Details', { description: details })
                           }}
                           title="View Transaction Details"
                         >

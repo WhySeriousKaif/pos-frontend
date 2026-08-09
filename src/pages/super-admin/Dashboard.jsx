@@ -189,7 +189,7 @@ const SuperAdminDashboard = () => {
               <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-slate-100 dark:text-white/5" />
               <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="currentColor" className="text-slate-500" />
               <YAxis tick={{ fontSize: 12 }} stroke="currentColor" className="text-slate-500" />
-              <Tooltip formatter={(value) => `$${value.toFixed(2)}`} />
+              <Tooltip formatter={(value) => `₹${value.toFixed(2)}`} />
               <Legend />
               <Bar dataKey="sales" fill="#2563EB" name="Sales" radius={[4, 4, 0, 0]} />
               <Bar dataKey="refunds" fill="#93C5FD" name="Refunds" radius={[4, 4, 0, 0]} />
@@ -208,7 +208,7 @@ const SuperAdminDashboard = () => {
           />
           <StatCard
             label="Total Sales"
-            value={`$${stats.totalSales.toFixed(2)}`}
+            value={`₹${stats.totalSales.toFixed(2)}`}
             sublabel="across all stores"
             icon={TrendingUp}
             colorClass="bg-cyan-500/10 text-cyan-600 dark:text-cyan-400"
@@ -222,7 +222,7 @@ const SuperAdminDashboard = () => {
           />
           <StatCard
             label="Total Refunds"
-            value={`$${stats.totalRefunds.toFixed(2)}`}
+            value={`₹${stats.totalRefunds.toFixed(2)}`}
             sublabel="sales returns"
             icon={Undo2}
             colorClass="bg-violet-500/10 text-violet-600 dark:text-violet-400"
@@ -251,7 +251,7 @@ const SuperAdminDashboard = () => {
                     <tr key={p.name} className="border-b border-slate-50 dark:border-white/5 last:border-0">
                       <td className="py-3 font-semibold text-slate-900 dark:text-white">{p.name}</td>
                       <td className="py-3 text-slate-600 dark:text-slate-300">{p.qty}</td>
-                      <td className="py-3 text-slate-600 dark:text-slate-300">${p.revenue.toFixed(2)}</td>
+                      <td className="py-3 text-slate-600 dark:text-slate-300">₹{p.revenue.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -289,7 +289,7 @@ const SuperAdminDashboard = () => {
                       <Cell key={i} fill={STORE_SALES_COLORS[i % STORE_SALES_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => `$${value.toFixed(2)}`} />
+                  <Tooltip formatter={(value) => `₹${value.toFixed(2)}`} />
                   <Legend iconSize={8} wrapperStyle={{ fontSize: 12 }} />
                 </PieChart>
               </ResponsiveContainer>

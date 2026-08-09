@@ -29,6 +29,9 @@ import { useDispatch, useSelector } from 'react-redux'
 import { logoutUser } from '@/store/slices/authSlice'
 import { storeAPI, userAPI } from '@/services/api'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useStoreAlerts } from '@/hooks/useStoreAlerts'
+
+const NOTIFICATIONS_POLL_INTERVAL_MS = 30000
 
 const menuItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/store' },
@@ -91,6 +94,29 @@ const StoreAdminLayout = ({ children }) => {
   const location = useLocation()
   const dispatch = useDispatch()
   const { darkMode, toggleTheme } = useTheme()
+
+  const { inactiveCashiers, lowStockProducts, noSaleBranches, refundSpikes } = useStoreAlerts(storeInfo?.id, {
+    pollIntervalMs: NOTIFICATIONS_POLL_INTERVAL_MS,
+  })
+
+  const notifications = [
+    ...lowStockProducts.map((p) => ({
+      id: `stock-${p.id}`,
+      message: `${p.name} is low on stock (${p.quantity} left)`,
+    })),
+    ...noSaleBranches.map((b) => ({
+      id: `branch-${b.id}`,
+      message: `No sales recorded today at ${b.name}`,
+    })),
+    ...refundSpikes.map((r) => ({
+      id: `refund-${r.id}`,
+      message: `Large refund of ${r.amount} by ${r.cashierName}`,
+    })),
+    ...inactiveCashiers.map((c) => ({
+      id: `cashier-${c.id}`,
+      message: `${c.fullName} hasn't logged in since ${c.lastLogin}`,
+    })),
+  ]
 
   React.useEffect(() => {
     fetchStoreInfo()
@@ -195,16 +221,28 @@ const StoreAdminLayout = ({ children }) => {
             <PopoverTrigger asChild>
               <button className="relative p-2.5 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer">
                 <Bell className="size-5" />
-                <span className="absolute top-1.5 right-1.5 h-4 min-w-4 px-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-slate-900">
-                  3
-                </span>
+                {notifications.length > 0 && (
+                  <span className="absolute top-1.5 right-1.5 h-4 min-w-4 px-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-slate-900">
+                    {notifications.length > 9 ? '9+' : notifications.length}
+                  </span>
+                )}
               </button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-72 p-0 bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10">
+            <PopoverContent align="end" className="w-80 p-0 bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10">
               <div className="px-4 py-3 border-b border-slate-100 dark:border-white/10 font-semibold text-sm text-slate-900 dark:text-white">
                 Notifications
               </div>
-              <div className="px-4 py-8 text-center text-sm text-slate-400">Nothing new right now</div>
+              {notifications.length === 0 ? (
+                <div className="px-4 py-8 text-center text-sm text-slate-400">Nothing new right now</div>
+              ) : (
+                <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-white/10">
+                  {notifications.map((n) => (
+                    <div key={n.id} className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
+                      {n.message}
+                    </div>
+                  ))}
+                </div>
+              )}
             </PopoverContent>
           </Popover>
           <div className="flex items-center gap-2.5 pl-2 ml-1 border-l border-slate-200 dark:border-white/10">

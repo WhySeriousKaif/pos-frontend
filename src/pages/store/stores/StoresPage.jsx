@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -77,7 +78,7 @@ const StoresPage = () => {
   const handleSave = async () => {
     try {
       if (!storeInfo?.id) {
-        alert('Store ID not found')
+        toast.error('Store ID not found')
         return
       }
 
@@ -86,10 +87,10 @@ const StoresPage = () => {
       setIsEditDialogOpen(false)
       // Dispatch event to update sidebar
       window.dispatchEvent(new CustomEvent('storeInfoUpdated'))
-      alert('Store information updated successfully!')
+      toast.success('Store information updated successfully!')
     } catch (error) {
       console.error('Error updating store:', error)
-      alert('Failed to update store information')
+      toast.error('Failed to update store information')
     }
   }
 
@@ -131,7 +132,7 @@ const StoresPage = () => {
 
   const handleCreateStore = async () => {
     if (!createForm.brand) {
-      alert('Store name is required')
+      toast.error('Store name is required')
       return
     }
 
@@ -159,10 +160,10 @@ const StoresPage = () => {
       await fetchStoreInfo()
       // Dispatch event to update sidebar
       window.dispatchEvent(new CustomEvent('storeInfoUpdated'))
-      alert('Store created successfully!')
+      toast.success('Store created successfully!')
     } catch (error) {
       console.error('Error creating store:', error)
-      alert(error.message || 'Failed to create store')
+      toast.error(error.message || 'Failed to create store')
     } finally {
       setCreating(false)
     }

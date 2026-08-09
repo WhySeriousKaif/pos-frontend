@@ -12,12 +12,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Plus, Edit, Trash2, RefreshCw, Check } from 'lucide-react'
+import { toast } from 'sonner'
 import { subscriptionPlanAPI } from '@/services/api'
+import { useConfirm } from '@/contexts/ConfirmContext'
 
 const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-IN', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'INR',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount || 0)
@@ -57,6 +59,7 @@ const toDto = (form) => ({
 })
 
 const SubscriptionPlansPage = () => {
+  const confirm = useConfirm()
   const [plans, setPlans] = useState([])
   const [loading, setLoading] = useState(true)
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -84,7 +87,7 @@ const SubscriptionPlansPage = () => {
 
   const handleAddPlan = async () => {
     if (!newPlan.name || !newPlan.price) {
-      alert('Please fill in all required fields')
+      toast.error('Please fill in all required fields')
       return
     }
     try {
@@ -94,7 +97,7 @@ const SubscriptionPlansPage = () => {
       setNewPlan(emptyForm)
     } catch (error) {
       console.error('Error creating plan:', error)
-      alert('Failed to create plan')
+      toast.error('Failed to create plan')
     }
   }
 
@@ -114,7 +117,7 @@ const SubscriptionPlansPage = () => {
 
   const handleUpdatePlan = async () => {
     if (!editPlan.name || !editPlan.price) {
-      alert('Please fill in all required fields')
+      toast.error('Please fill in all required fields')
       return
     }
     try {
@@ -124,18 +127,24 @@ const SubscriptionPlansPage = () => {
       setSelectedPlan(null)
     } catch (error) {
       console.error('Error updating plan:', error)
-      alert('Failed to update plan')
+      toast.error('Failed to update plan')
     }
   }
 
   const handleDeletePlan = async (id) => {
-    if (!confirm('Are you sure you want to delete this plan?')) return
+    const ok = await confirm({
+      title: 'Delete this plan?',
+      description: 'Are you sure you want to delete this plan?',
+      confirmLabel: 'Delete',
+      variant: 'destructive',
+    })
+    if (!ok) return
     try {
       await subscriptionPlanAPI.delete(id)
       await fetchPlans()
     } catch (error) {
       console.error('Error deleting plan:', error)
-      alert('Failed to delete plan')
+      toast.error('Failed to delete plan')
     }
   }
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -89,7 +90,7 @@ const SettingsPage = () => {
   const handleStoreSave = async () => {
     try {
       if (!storeInfo?.id) {
-        alert('Store ID not found')
+        toast.error('Store ID not found')
         return
       }
 
@@ -97,10 +98,10 @@ const SettingsPage = () => {
       await storeAPI.update(storeInfo.id, storeForm)
       await fetchData()
       window.dispatchEvent(new CustomEvent('storeInfoUpdated'))
-      alert('Store settings updated successfully!')
+      toast.success('Store settings updated successfully!')
     } catch (error) {
       console.error('Error updating store settings:', error)
-      alert('Failed to update store settings')
+      toast.error('Failed to update store settings')
     } finally {
       setSaving(false)
     }
@@ -110,10 +111,10 @@ const SettingsPage = () => {
     try {
       // Note: User update might need a separate API endpoint
       // For now, we'll just show a message
-      alert('User profile update functionality will be available soon')
+      toast('User profile update functionality will be available soon')
     } catch (error) {
       console.error('Error updating user settings:', error)
-      alert('Failed to update user settings')
+      toast.error('Failed to update user settings')
     }
   }
 

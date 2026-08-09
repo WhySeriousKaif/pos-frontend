@@ -25,6 +25,8 @@ import {
 import { Calendar } from '@/components/ui/calendar'
 import { Search, Eye, Printer, RotateCcw, CalendarIcon, Download, X } from 'lucide-react'
 import { orderAPI } from '@/services/api'
+import { toast } from 'sonner'
+import { useConfirm } from '@/contexts/ConfirmContext'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { startOfToday, startOfWeek, startOfMonth, subDays, subMonths } from 'date-fns'
@@ -40,6 +42,7 @@ const OrderHistory = () => {
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [branchId, setBranchId] = useState(1) // Default branch ID
+  const confirm = useConfirm()
 
   useEffect(() => {
     fetchOrders()
@@ -135,13 +138,18 @@ const OrderHistory = () => {
       downloadInvoicePDF(order)
     } catch (error) {
       console.error('Error generating PDF invoice:', error)
-      alert('Failed to generate invoice. Please try again.')
+      toast.error('Failed to generate invoice. Please try again.')
     }
   }
 
   const handleRefundOrder = async (order) => {
     // TODO: Implement refund functionality
-    if (confirm(`Do you want to process a refund for Order #${order.id}?`)) {
+    const ok = await confirm({
+      title: 'Process refund?',
+      description: `Do you want to process a refund for Order #${order.id}?`,
+      confirmLabel: 'Process Refund',
+    })
+    if (ok) {
       console.log('Processing refund for order:', order.id)
       // Navigate to refund page or open refund dialog
     }

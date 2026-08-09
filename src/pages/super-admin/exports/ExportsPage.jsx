@@ -12,6 +12,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Download, FileText, Database, Users, Store, ShoppingCart } from 'lucide-react'
 import { format } from 'date-fns'
+import { toast } from 'sonner'
 import { storeAPI, userAPI, orderAPI, branchAPI } from '@/services/api'
 
 // Returns [start, end) for the selected date range, or null for "all time" / invalid custom range
@@ -85,7 +86,7 @@ const ExportsPage = () => {
       setExporting(true)
       const range = resolveDateRange(dateRange, startDate, endDate)
       if (dateRange === 'custom' && !range) {
-        alert('Please choose a start and end date for a custom range')
+        toast.error('Please choose a start and end date for a custom range')
         return
       }
 
@@ -121,7 +122,7 @@ const ExportsPage = () => {
       data = filterByDateRange(data, range)
 
       if (data.length === 0) {
-        alert('No data to export for the selected range')
+        toast.error('No data to export for the selected range')
         return
       }
 
@@ -131,10 +132,10 @@ const ExportsPage = () => {
         exportToJSON(data, filename)
       }
 
-      alert(`Export completed successfully! (${data.length} records)`)
+      toast.success(`Export completed successfully! (${data.length} records)`)
     } catch (error) {
       console.error('Error exporting data:', error)
-      alert('Failed to export data')
+      toast.error('Failed to export data')
     } finally {
       setExporting(false)
     }
@@ -142,7 +143,7 @@ const ExportsPage = () => {
 
   const exportToCSV = (data, filename) => {
     if (!data || data.length === 0) {
-      alert('No data to export')
+      toast.error('No data to export')
       return
     }
 

@@ -60,6 +60,7 @@ const SuperAdminSalesPage = () => {
   const [salesData, setSalesData] = useState([])
   const [paymentData, setPaymentData] = useState([])
   const [storeSalesData, setStoreSalesData] = useState([])
+  const [adminBreakdown, setAdminBreakdown] = useState([])
 
   useEffect(() => {
     fetchSalesData()
@@ -77,11 +78,16 @@ const SuperAdminSalesPage = () => {
       const allStores = await storeAPI.getAll()
       setStores(allStores)
 
-      // Fetch orders from all branches of all stores
+      // Fetch orders from all branches of all stores. Track which store (and therefore
+      // which Store Admin) each branch belongs to, so sales can be broken down by admin.
       const allBranches = []
+      const branchToStore = {}
       for (const store of allStores) {
         try {
           const branches = await branchAPI.getByStoreId(store.id).catch(() => [])
+          branches.forEach((branch) => {
+            branchToStore[branch.id] = store
+          })
           allBranches.push(...branches)
         } catch (error) {
           console.error(`Error fetching branches for store ${store.id}:`, error)
@@ -196,6 +202,57 @@ const SuperAdminSalesPage = () => {
         .slice(0, 10)
 
       setStoreSalesData(storeSales)
+
+      // Break sales down by Store Admin -> Store -> Branch, so the platform owner can see
+      // which admin/brand is driving revenue and which of their branches carry it.
+      const salesByBranch = {}
+      orders.forEach((order) => {
+        const branchId = order.branch?.id
+        if (!branchId) return
+        if (!salesByBranch[branchId]) {
+          salesByBranch[branchId] = { branchId, sales: 0, orders: 0 }
+        }
+        salesByBranch[branchId].sales += order.totalAmount || 0
+        salesByBranch[branchId].orders += 1
+      })
+
+      const branchRows = allBranches.map((branch) => {
+        const store = branchToStore[branch.id]
+        const agg = salesByBranch[branch.id] || { sales: 0, orders: 0 }
+        return {
+          storeAdminId: store?.storeAdmin?.id ?? 'unknown',
+          storeAdminName: store?.storeAdmin?.fullName || 'Unassigned',
+          storeAdminEmail: store?.storeAdmin?.email || '',
+          storeName: store?.brand || 'Unknown Store',
+          branchName: branch.name || `Branch ${branch.id}`,
+          sales: agg.sales,
+          orders: agg.orders,
+        }
+      })
+
+      // Group rows under each Store Admin, with a running total per admin, so the UI
+      // can show "this admin made X, split across these branches" instead of one flat list.
+      const grouped = {}
+      branchRows.forEach((row) => {
+        if (!grouped[row.storeAdminId]) {
+          grouped[row.storeAdminId] = {
+            storeAdminId: row.storeAdminId,
+            storeAdminName: row.storeAdminName,
+            storeAdminEmail: row.storeAdminEmail,
+            storeName: row.storeName,
+            totalSales: 0,
+            totalOrders: 0,
+            branches: [],
+          }
+        }
+        grouped[row.storeAdminId].totalSales += row.sales
+        grouped[row.storeAdminId].totalOrders += row.orders
+        grouped[row.storeAdminId].branches.push(row)
+      })
+
+      setAdminBreakdown(
+        Object.values(grouped).sort((a, b) => b.totalSales - a.totalSales)
+      )
     } catch (error) {
       console.error('Error fetching sales data:', error)
     } finally {
@@ -245,9 +302,9 @@ const SuperAdminSalesPage = () => {
   }
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount)
@@ -462,6 +519,64 @@ const SuperAdminSalesPage = () => {
                 <Bar dataKey="sales" fill="#8884d8" name="Sales" />
               </BarChart>
             </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sales by Store Admin & Branch */}
+      {adminBreakdown.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Sales by Store Admin & Branch</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Every store admin on the platform, and how their sales split across their branches
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Store Admin</TableHead>
+                    <TableHead>Store</TableHead>
+                    <TableHead>Branch</TableHead>
+                    <TableHead>Orders</TableHead>
+                    <TableHead className="text-right">Sales</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {adminBreakdown.map((admin) => (
+                    <React.Fragment key={admin.storeAdminId}>
+                      {admin.branches.map((branch, idx) => (
+                        <TableRow key={`${admin.storeAdminId}-${branch.branchName}-${idx}`}>
+                          {idx === 0 ? (
+                            <TableCell rowSpan={admin.branches.length} className="align-top font-medium border-r">
+                              <div>{admin.storeAdminName}</div>
+                              <div className="text-xs text-muted-foreground">{admin.storeAdminEmail}</div>
+                            </TableCell>
+                          ) : null}
+                          {idx === 0 ? (
+                            <TableCell rowSpan={admin.branches.length} className="align-top border-r">
+                              {admin.storeName}
+                            </TableCell>
+                          ) : null}
+                          <TableCell>{branch.branchName}</TableCell>
+                          <TableCell>{branch.orders}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(branch.sales)}</TableCell>
+                        </TableRow>
+                      ))}
+                      <TableRow className="bg-muted/40 font-semibold">
+                        <TableCell colSpan={3} className="text-right">
+                          Total for {admin.storeAdminName}
+                        </TableCell>
+                        <TableCell>{admin.totalOrders}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(admin.totalSales)}</TableCell>
+                      </TableRow>
+                    </React.Fragment>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       )}
