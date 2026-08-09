@@ -141,7 +141,26 @@ const CustomerPaymentSection = () => {
           description: paymentType === 'UPI' ? 'UPI Payment' : 'Card Payment',
           order_id: order_id,
           handler: async function (response) {
-            await createBackendOrder(response.razorpay_payment_id, response.razorpay_order_id, response.razorpay_signature);
+            // Verify the signature server-side BEFORE creating the order — otherwise a
+            // tampered client could send fake payment/signature values and get an order
+            // marked as paid without ever actually paying.
+            try {
+              const verification = await paymentAPI.verifyPayment({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              });
+              if (!verification?.verified) {
+                setError('Payment verification failed. Order was not placed.');
+                setProcessing(false);
+                return;
+              }
+            } catch (verifyErr) {
+              setError('Payment verification failed: ' + verifyErr.message);
+              setProcessing(false);
+              return;
+            }
+            await createBackendOrder();
           },
           prefill: {
             name: selectedCustomer?.name || selectedCustomer?.fullName || "Walk-in Customer",
@@ -177,7 +196,7 @@ const CustomerPaymentSection = () => {
     }
   }
 
-  const createBackendOrder = async (paymentId, razorpayOrderId, signature) => {
+  const createBackendOrder = async () => {
     try {
       // Prepare order data. branchId/cashierId are intentionally NOT sent — the backend
       // always derives both from the authenticated cashier's own account, never from

@@ -339,6 +339,10 @@ export const paymentAPI = {
   createOrder: (data) => apiCall(`/payments/create-order?amount=${data.amount}&currency=${data.currency}`, {
     method: 'POST',
   }),
+  verifyPayment: (data) => apiCall('/payments/verify-payment', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
 };
 
 // Subscription Plan API
