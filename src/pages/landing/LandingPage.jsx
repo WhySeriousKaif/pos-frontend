@@ -385,6 +385,75 @@ const LandingPage = () => {
         />
       </section>
 
+      {/* Platform Preview Section — real screenshots of the actual product, not mockups */}
+      <section id="platform-preview" className="py-24 px-4 sm:px-6 lg:px-8 bg-[#F0F4FB] dark:bg-[#0C1424] transition-colors">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-16">
+            <span
+              className="inline-block text-xs font-extrabold uppercase tracking-widest text-blue-700 dark:text-blue-300 bg-blue-500/10 border border-blue-500/30 px-4 py-1.5 rounded-full mb-4"
+              style={{ fontFamily: "'JetBrains Mono', 'Monaco', monospace" }}
+            >
+              SEE IT IN ACTION
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white mb-4">
+              One platform, built for every role
+            </h2>
+            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+              From the billing counter to the boardroom — every screen in Bilix is designed for the person actually using it.
+            </p>
+          </div>
+
+          <div className="space-y-20">
+            {[
+              {
+                image: '/cashierPage.png',
+                role: 'CASHIER',
+                title: 'Billing counter, built for speed',
+                description: "Scan, discount, and checkout in seconds — cash, card, or UPI, all from one screen. Stock levels update the moment an order is placed.",
+              },
+              {
+                image: '/managerPage.png',
+                role: 'BRANCH MANAGER',
+                title: 'The live pulse of one branch',
+                description: "Today's sales, active staff, refunds, and payment mix — updated in real time, with a 7-day revenue trend at a glance.",
+              },
+              {
+                image: '/StoreAdminPage.png',
+                role: 'STORE ADMIN',
+                title: 'The full business, at a glance',
+                description: 'Every branch, every product, every employee — rolled up into one dashboard, so nothing needs a spreadsheet to explain it.',
+              },
+            ].map((item, idx) => (
+              <div
+                key={item.role}
+                className={`flex flex-col ${idx % 2 === 1 ? 'lg:flex-row-reverse' : 'lg:flex-row'} items-center gap-10 lg:gap-16`}
+              >
+                <div className="w-full lg:w-1/2 shrink-0 text-center lg:text-left">
+                  <span className="inline-block text-xs font-extrabold uppercase tracking-widest text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full mb-4">
+                    {item.role}
+                  </span>
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-3 leading-tight">
+                    {item.title}
+                  </h3>
+                  <p className="text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-md mx-auto lg:mx-0">
+                    {item.description}
+                  </p>
+                </div>
+                <div className="w-full lg:w-1/2">
+                  <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 shadow-2xl shadow-slate-900/10 dark:shadow-black/40">
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      className="w-full h-auto block"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Pricing Section */}
       <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8 bg-[#F0F4FB] dark:bg-[#0C1424] transition-colors">
         <div className="container mx-auto max-w-6xl">
