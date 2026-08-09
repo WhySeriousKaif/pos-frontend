@@ -125,8 +125,16 @@ const CustomerPaymentSection = () => {
         const response = await paymentAPI.createOrder(orderData);
         const { id: order_id, currency, amount, key } = response;
 
+        if (!key) {
+          // Falling back to some other hardcoded key here would open a DIFFERENT
+          // merchant's checkout with no warning — worse than just failing loudly.
+          setError('Payment gateway is not configured correctly. Contact your admin.');
+          setProcessing(false);
+          return;
+        }
+
         const options = {
-          key: key || "rzp_test_MwXi3d9f7g1t8Z",
+          key,
           amount: amount,
           currency: currency || "INR",
           name: "Bilix POS",
@@ -171,10 +179,10 @@ const CustomerPaymentSection = () => {
 
   const createBackendOrder = async (paymentId, razorpayOrderId, signature) => {
     try {
-      // Prepare order data
+      // Prepare order data. branchId/cashierId are intentionally NOT sent — the backend
+      // always derives both from the authenticated cashier's own account, never from
+      // client-supplied values, so a cashier can't attribute a sale to another branch.
       const orderDto = {
-        branchId: 1, // Default branch 
-        cashierId: 1, // Default cashier
         customerId: selectedCustomer?.id || null, // Allow null for walk-in
         paymentType: paymentType,
         status: 'COMPLETED',

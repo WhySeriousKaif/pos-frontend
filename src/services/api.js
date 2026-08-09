@@ -32,13 +32,19 @@ const apiCall = async (endpoint, options = {}) => {
         throw new Error('Authentication required. Please login again.');
       }
 
-      // Try to parse error message from response
+      // Try to parse a real error message out of the response body. Note: the throw
+      // must happen outside this try — throwing inside it would just be caught by
+      // this same catch below, so the real backend message never reached the caller.
+      let message = `Server error: ${response.status} ${response.statusText}`;
       try {
-        const error = await response.json();
-        throw new Error(error.message || `HTTP error! status: ${response.status}`);
+        const errorBody = await response.json();
+        if (errorBody?.message) {
+          message = errorBody.message;
+        }
       } catch (parseError) {
-        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        // Response wasn't JSON — fall back to the generic message above.
       }
+      throw new Error(message);
     }
 
     // Handle empty responses
